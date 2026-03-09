@@ -3,10 +3,10 @@ import '../models/city.dart';
 
 class AppState {
   // Налаштування
-  static final theme = ValueNotifier<String>('auto');
+
   static final language = ValueNotifier<String>('auto');
   static final currency = ValueNotifier<String>('USD');
-  static final tempUnit = ValueNotifier<String>('C');
+
 
   // Улюблені міста
   static final favorites = ValueNotifier<List<City>>([]);
@@ -44,6 +44,8 @@ class AppState {
   }
 
   // === КОЛЬОРОВА ПАЛІТРА ДЛЯ ТЕМНОЇ/СВІТЛОЇ ТЕМИ ===
+ static ValueNotifier<String> theme = ValueNotifier('Light'); 
+ static ValueNotifier<String> tempUnit = ValueNotifier('C');
   static bool get isDark => theme.value == 'Dark';
   
   static Color get bgMain => isDark ? const Color(0xFF121212) : const Color(0xFFF9F9F9);

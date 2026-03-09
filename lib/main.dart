@@ -1,10 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui'; // Потрібно для налаштування миші та тачпаду
+
+// Твої імпорти екранів та стану (залиш свої, якщо вони відрізняються)
 import 'screens/home_screen.dart';
-import 'state/app_state.dart';
+import 'state/app_state.dart'; 
 
 void main() {
   runApp(const YouOptimalApp());
+}
+
+// 1. СТВОРЮЄМО КАСТОМНУ ФІЗИКУ СКРОЛІНГУ
+class SmoothScrollBehavior extends MaterialScrollBehavior {
+  // Дозволяємо тягнути екран мишкою на Web/Desktop
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+      };
+
+  // Вмикаємо плавну iOS-фізику (Bouncing) для всіх списків
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
+  }
 }
 
 class YouOptimalApp extends StatelessWidget {
@@ -12,38 +31,25 @@ class YouOptimalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Слухаємо зміну теми
-    return ValueListenableBuilder(
+    return ValueListenableBuilder<String>(
       valueListenable: AppState.theme,
-      builder: (context, themeVal, _) {
-        // Слухаємо зміну мови
-        return ValueListenableBuilder(
-          valueListenable: AppState.language,
-          builder: (context, langVal, _) {
-            return MaterialApp(
-              // МАГІЯ: Цей ключ змушує весь додаток повністю перемалюватися при зміні мови або теми!
-              key: ValueKey('$themeVal-$langVal'), 
-              title: 'YouOptimal',
-              debugShowCheckedModeBanner: false,
-              theme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(
-                  seedColor: Colors.black,
-                  brightness: AppState.isDark ? Brightness.dark : Brightness.light,
-                ),
-                useMaterial3: true,
-                scaffoldBackgroundColor: AppState.bgMain,
-                textTheme: GoogleFonts.interTextTheme(
-                  Theme.of(context).textTheme,
-                ).apply(
-                  bodyColor: AppState.textMain,
-                  displayColor: AppState.textMain,
-                ),
-              ),
-              home: const HomeScreen(),
-            );
-          }
+      builder: (context, themeValue, _) {
+        // Логіка твоєї теми...
+        
+        return MaterialApp(
+          title: 'YouOptimal',
+          debugShowCheckedModeBanner: false,
+          
+          // 2. ПІДКЛЮЧАЄМО НАШ ПЛАВНИЙ СКРОЛІНГ СЮДИ
+          scrollBehavior: SmoothScrollBehavior(), 
+          
+          theme: ThemeData(
+            scaffoldBackgroundColor: AppState.bgMain,
+            fontFamily: 'Roboto', // Або ваш фірмовий шрифт
+          ),
+          home: const HomeScreen(),
         );
-      }
+      },
     );
   }
 }

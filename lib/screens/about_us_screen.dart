@@ -111,22 +111,35 @@ class AboutUsScreen extends StatelessWidget {
               ],
             ),
           ),
-          // ДЕКОРАТИВНА ЧОРНА ДУГА В ПРАВОМУ НИЖНЬОМУ КУТІ
+          
+          // ІДЕАЛЬНА ДУГА: Малюємо велике коло і обрізаємо його (обхід бага Flutter)
           Positioned(
             bottom: 0,
             right: 0,
-            child: Container(
-              width: 24, 
-              height: 24,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(24)),
-                border: Border(
-                  bottom: BorderSide(color: AppState.textMain, width: 2.5),
-                  right: BorderSide(color: AppState.textMain, width: 2.5),
+            child: ClipRect(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 48, // Робимо коло вдвічі більшим
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppState.textMain, width: 2.5),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
+          
         ],
       ),
     );

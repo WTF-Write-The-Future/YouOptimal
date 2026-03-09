@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     List<City> paginatedCities = displayedCities.skip((_currentPage - 1) * _itemsPerPage).take(_itemsPerPage).toList();
 
     return Scaffold(
-      appBar: const MainAppHeader(showFavourite: true), // УВІМКНУТО ХЕДЕР FAVOURITE
+      appBar: const MainAppHeader(showFavourite: true),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,16 +177,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text('For you', style: TextStyle(fontSize: isMobile ? 36 : 56, fontWeight: FontWeight.w900, letterSpacing: -2.0, color: AppState.textMain)),
                   const SizedBox(height: 32),
                   
+                  // ОСЬ ТУТ БУЛА ПОМИЛКА: додано закриваючі дужки та двокрапку ":"
                   paginatedCities.isEmpty
-                      ? Center(child: Padding(padding: const EdgeInsets.all(40.0), child: Text('No cities found 😔', style: TextStyle(fontSize: 18, color: AppState.textMuted))))
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40.0), 
+                            child: Text(
+                              'No cities found 😔', 
+                              style: TextStyle(
+                                fontSize: 24, 
+                                fontWeight: FontWeight.bold, 
+                                color: AppState.textMain
+                              )
+                            ),
+                          ),
+                        )
                       : GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: paginatedCities.length,
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: screenWidth > 1100 ? 2 : 1, // 2 колонки на широких екранах
-                            crossAxisSpacing: 60, // Більша відстань між колонками
-                            mainAxisSpacing: 60,  // Більша відстань між рядками
+                            crossAxisCount: screenWidth > 1100 ? 2 : 1,
+                            crossAxisSpacing: 60,
+                            mainAxisSpacing: 60,
                             childAspectRatio: screenWidth > 1100 ? 2.5 : (isMobile ? 1.2 : 2.0), 
                           ),
                           itemBuilder: (context, index) {

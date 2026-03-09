@@ -3,6 +3,7 @@ import '../models/city.dart';
 import '../widgets/custom_header.dart';
 import '../state/app_state.dart';
 import 'review_screen.dart';
+import '../utils/premium_transition.dart';
 
 class CityDetailsScreen extends StatelessWidget {
   final City city;
@@ -193,18 +194,19 @@ class CityDetailsScreen extends StatelessWidget {
         const SizedBox(height: 24),
         
         // --- БЕЙДЖІ (ТЕПЕР ІЗ ТЕМПЕРАТУРОЮ З JSON ТА КОНВЕРТАЦІЄЮ) ---
-        ValueListenableBuilder(
+       ValueListenableBuilder(
           valueListenable: AppState.tempUnit,
           builder: (context, _, __) {
-            String unit = AppState.tempUnit.value; // '°C' або '°F'
+            String unit = AppState.tempUnit.value; // 'C' або 'F'
             
-            // Беремо температуру з JSON (якщо у вас поле називається інакше, просто змініть city.temperature)
+            // Беремо температуру з JSON
             int tempC = city.temperature.toInt(); 
             
-            // Якщо вибрано Фаренгейти - конвертуємо
-            int displayTemp = unit == '°F' ? (tempC * 9 ~/ 5 + 32) : tempC;
+            // Конвертуємо, якщо Фаренгейт
+            int displayTemp = unit == 'F' ? (tempC * 9 ~/ 5 + 32) : tempC;
             
-            return _buildStatBadge(Icons.wb_sunny_outlined, '$displayTemp$unit');
+            // ДОДАЛИ КРУЖЕЧОК "°" ОСЬ ТУТ:
+            return _buildStatBadge(Icons.wb_sunny_outlined, '$displayTemp°$unit');
           }
         ),
         _buildStatBadge(Icons.wifi, 'Internet speed'),
@@ -256,7 +258,8 @@ class CityDetailsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         elevation: 0,
       ),
-      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ReviewScreen(city: city))),
+      // ПЛАВНИЙ ПЕРЕХІД НА ЕКРАН ВІДГУКІВ
+      onPressed: () => Navigator.push(context, PremiumTransition(page: ReviewScreen(city: city))),
       child: const Text('Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }

@@ -6,6 +6,7 @@ import '../screens/login_screen.dart';
 import '../screens/register_screen.dart';
 import '../screens/favorites_screen.dart';
 import '../state/app_state.dart';
+import '../utils/premium_transition.dart'; // ПІДКЛЮЧИЛИ АНІМАЦІЮ
 
 class MainAppHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool showFavourite; 
@@ -31,13 +32,13 @@ class MainAppHeader extends StatelessWidget implements PreferredSizeWidget {
         title: Row(
           children: [
             GestureDetector(
-              onTap: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false),
+              onTap: () => Navigator.pushAndRemoveUntil(context, PremiumTransition(page: const HomeScreen()), (route) => false), // ПЛАВНИЙ ПЕРЕХІД
               child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('YouOptimal', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26, color: AppState.textMain))),
             ),
             if (showFavourite && !isMobile) ...[
               const SizedBox(width: 40),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen())),
+                onPressed: () => Navigator.push(context, PremiumTransition(page: const FavoritesScreen())), // ПЛАВНИЙ ПЕРЕХІД
                 style: TextButton.styleFrom(foregroundColor: AppState.textMuted),
                 child: Row(
                   children: [
@@ -52,7 +53,6 @@ class MainAppHeader extends StatelessWidget implements PreferredSizeWidget {
         ),
         actions: isMobile 
           ? [
-              // ДОДАНО ОБРОБНИК НАТИСКАННЯ НА МОБІЛЬНЕ МЕНЮ
               IconButton(
                 icon: Icon(Icons.menu, color: AppState.textMain), 
                 onPressed: () {
@@ -71,27 +71,27 @@ class MainAppHeader extends StatelessWidget implements PreferredSizeWidget {
                             ListTile(
                               leading: Icon(Icons.favorite_border, color: AppState.textMain),
                               title: Text('Favourite', style: TextStyle(color: AppState.textMain, fontWeight: FontWeight.bold)),
-                              onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen())); },
+                              onTap: () { Navigator.pop(context); Navigator.push(context, PremiumTransition(page: const FavoritesScreen())); }, // ПЛАВНИЙ ПЕРЕХІД
                             ),
                           ListTile(
                             leading: Icon(Icons.settings_outlined, color: AppState.textMain),
                             title: Text('Settings', style: TextStyle(color: AppState.textMain, fontWeight: FontWeight.bold)),
-                            onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())); },
+                            onTap: () { Navigator.pop(context); Navigator.push(context, PremiumTransition(page: const SettingsScreen())); }, // ПЛАВНИЙ ПЕРЕХІД
                           ),
                           ListTile(
                             leading: Icon(Icons.help_outline, color: AppState.textMain),
                             title: Text('About us', style: TextStyle(color: AppState.textMain, fontWeight: FontWeight.bold)),
-                            onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutUsScreen())); },
+                            onTap: () { Navigator.pop(context); Navigator.push(context, PremiumTransition(page: const AboutUsScreen())); }, // ПЛАВНИЙ ПЕРЕХІД
                           ),
                           ListTile(
                             leading: Icon(Icons.login, color: AppState.textMain),
                             title: Text('Sign in', style: TextStyle(color: AppState.textMain, fontWeight: FontWeight.bold)),
-                            onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen())); },
+                            onTap: () { Navigator.pop(context); Navigator.push(context, PremiumTransition(page: const LoginScreen())); }, // ПЛАВНИЙ ПЕРЕХІД
                           ),
                           ListTile(
                             leading: Icon(Icons.person_add_alt_1, color: AppState.textMain),
                             title: Text('Register', style: TextStyle(color: AppState.textMain, fontWeight: FontWeight.bold)),
-                            onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())); },
+                            onTap: () { Navigator.pop(context); Navigator.push(context, PremiumTransition(page: const RegisterScreen())); }, // ПЛАВНИЙ ПЕРЕХІД
                           ),
                           const SizedBox(height: 20),
                         ],
@@ -104,7 +104,7 @@ class MainAppHeader extends StatelessWidget implements PreferredSizeWidget {
             ] 
           : [
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen())),
+                onPressed: () => Navigator.push(context, PremiumTransition(page: const SettingsScreen())), // ПЛАВНИЙ ПЕРЕХІД
                 child: Row(
                   children: [
                     Text('Settings', style: TextStyle(color: AppState.textMuted, fontWeight: FontWeight.bold)),
@@ -115,7 +115,7 @@ class MainAppHeader extends StatelessWidget implements PreferredSizeWidget {
               ),
               const SizedBox(width: 16),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutUsScreen())),
+                onPressed: () => Navigator.push(context, PremiumTransition(page: const AboutUsScreen())), // ПЛАВНИЙ ПЕРЕХІД
                 child: Row(
                   children: [
                     Text('About us', style: TextStyle(color: AppState.textMuted, fontWeight: FontWeight.bold)),
@@ -126,7 +126,7 @@ class MainAppHeader extends StatelessWidget implements PreferredSizeWidget {
               ),
               const SizedBox(width: 16),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen())), 
+                onPressed: () => Navigator.push(context, PremiumTransition(page: const LoginScreen())), // ПЛАВНИЙ ПЕРЕХІД
                 child: Text('Sign in', style: TextStyle(color: AppState.textMuted, fontWeight: FontWeight.bold))
               ),
               const SizedBox(width: 16),
@@ -140,7 +140,7 @@ class MainAppHeader extends StatelessWidget implements PreferredSizeWidget {
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 24)
                   ),
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen())),
+                  onPressed: () => Navigator.push(context, PremiumTransition(page: const RegisterScreen())), // ПЛАВНИЙ ПЕРЕХІД
                   child: const Text('Register', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),

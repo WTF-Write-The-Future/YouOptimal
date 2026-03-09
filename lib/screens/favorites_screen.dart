@@ -3,6 +3,7 @@ import '../widgets/custom_header.dart';
 import '../state/app_state.dart';
 import '../models/city.dart';
 import 'city_details_screen.dart';
+import '../utils/premium_transition.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -13,17 +14,17 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   int _currentPage = 1;
-  final int _itemsPerPage = 3; // Показуємо по 3 картки в ряд, як на макеті
+  final int _itemsPerPage = 3;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppState.bgMain,
-      appBar: const MainAppHeader(showFavourite: true), // Увімкнули Favourite в хедері
+      appBar: const MainAppHeader(showFavourite: true),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ЧОРНА КНОПКА НАЗАД (Під логотипом зліва)
+          // ЧОРНА КНОПКА НАЗАД
           Padding(
             padding: const EdgeInsets.only(left: 40.0, top: 24.0, bottom: 20.0),
             child: GestureDetector(
@@ -43,17 +44,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             child: ValueListenableBuilder(
               valueListenable: AppState.favorites,
               builder: (context, favorites, _) {
+                // --- ОСЬ ТУТ ЗМІНЕНО СТИЛЬ ТЕКСТУ ---
                 if (favorites.isEmpty) {
                   return Center(
-                    child: Text('No favourite cities yet ❤️', style: TextStyle(fontSize: 20, color: AppState.textMuted))
+                    child: Text(
+                      'No favourite cities yet ❤️', 
+                      style: TextStyle(
+                        fontSize: 24, // Трохи збільшили
+                        fontWeight: FontWeight.bold, // Зробили жирним
+                        color: AppState.textMain // Зробили основним темним кольором
+                      )
+                    )
                   );
                 }
 
-                // Логіка пагінації для улюблених
                 int totalPages = (favorites.length / _itemsPerPage).ceil();
                 if (totalPages == 0) totalPages = 1;
                 
-                // Захист від виходу за межі сторінок при видаленні останнього елемента на сторінці
                 if (_currentPage > totalPages) _currentPage = totalPages;
 
                 List<City> paginatedFavorites = favorites.skip((_currentPage - 1) * _itemsPerPage).take(_itemsPerPage).toList();
@@ -62,12 +69,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.only(bottom: 40, left: 20, right: 20),
                     child: Container(
-                      constraints: const BoxConstraints(maxWidth: 1100), // Широкий контейнер для 3 карток
+                      constraints: const BoxConstraints(maxWidth: 1100),
                       padding: const EdgeInsets.all(40),
                       decoration: BoxDecoration(
                         color: AppState.bgCard, 
                         borderRadius: BorderRadius.circular(24), 
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, 10))]
+                        boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, 10))]
                       ),
                       child: Column(
                         children: [
@@ -103,13 +110,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                       }
                                     ),
                                     const SizedBox(height: 4),
-                                    // Замість "Button 5" з макету виводимо країну
                                     Text(city.country, style: TextStyle(color: AppState.textMuted, fontSize: 14)), 
                                     const SizedBox(height: 24),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween, // Розносимо кнопки по краях
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        // ЧОРНА КНОПКА VIEW (Форма пігулки)
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFF2D2D2D),
@@ -118,14 +123,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                             elevation: 0,
                                           ),
-                                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CityDetailsScreen(city: city))),
+                                          onPressed: () => Navigator.push(context, PremiumTransition(page: CityDetailsScreen(city: city))),
                                           child: const Text('VIEW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
                                         ),
-                                        // ЧОРНЕ СЕРЦЕ
                                         GestureDetector(
                                           onTap: () {
                                             AppState.toggleFavorite(city);
-                                            setState(() {}); // Оновлюємо стан пагінації після видалення
+                                            setState(() {}); 
                                           },
                                           child: MouseRegion(
                                             cursor: SystemMouseCursors.click, 
@@ -143,7 +147,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               );
                             }).toList(),
                           ),
-                          // ПАГІНАЦІЯ (З'являється, якщо міст більше ніж 3)
                           if (totalPages > 1) ...[
                             const SizedBox(height: 40),
                             Row(
