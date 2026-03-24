@@ -1,299 +1,349 @@
 import 'package:flutter/material.dart';
 import '../models/city.dart';
-import '../widgets/custom_header.dart';
 import '../state/app_state.dart';
-import 'review_screen.dart';
-import '../utils/premium_transition.dart';
+import '../widgets/custom_header.dart';
+import '../screens/review_screen.dart';
 
 class CityDetailsScreen extends StatelessWidget {
   final City city;
 
   const CityDetailsScreen({super.key, required this.city});
 
+  final Color bgScreen = const Color(0xFFF7F3E8);
+  final Color bgCard = const Color(0xFFC9BA9B);
+  final Color bgChip = const Color(0xFFFFFBEB);
+  final Color textDark = const Color(0xFF2B3233);
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    bool isMobile = screenWidth < 800;
+    bool isMobile = screenWidth < 1000;
 
     return Scaffold(
-      backgroundColor: AppState.bgMain, 
-      appBar: const MainAppHeader(showFavourite: true),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ЧОРНА КНОПКА НАЗАД
-          Padding(
-            padding: const EdgeInsets.only(left: 40.0, top: 24.0, bottom: 20.0),
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click, 
-                child: Container(width: 32, height: 32, decoration: const BoxDecoration(color: Color(0xFF2D2D2D), shape: BoxShape.circle), child: const Icon(Icons.arrow_back, color: Colors.white, size: 16))
-              ),
+      backgroundColor: bgScreen,
+      appBar: const MainAppHeader(showFavourite: false),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 40.0, vertical: 40.0),
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            decoration: BoxDecoration(
+              color: bgCard,
+              borderRadius: BorderRadius.circular(40),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 15))
+              ],
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Center(
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  child: Column(
+            child: isMobile
+                ? Column(
+                    children: [
+                      Padding(padding: const EdgeInsets.all(24), child: _buildLeftSection(context, isMobile)),
+                      _buildRightSection(context, isMobile),
+                    ],
+                  )
+                : Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ДВОКОЛОНКОВИЙ ЛЕЙАУТ
-                      isMobile 
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildImage(),
-                              const SizedBox(height: 24),
-                              _buildAboutCity(),
-                              const SizedBox(height: 24),
-                              _buildCityInfo(context),
-                              const SizedBox(height: 24),
-                              _buildReviewButton(context),
-                            ],
-                          )
-                        : IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // ЛІВА КОЛОНКА (Фото + About City)
-                                Expanded(
-                                  flex: 5, 
-                                  child: Column(
-                                    children: [
-                                      _buildImage(),
-                                      const SizedBox(height: 24),
-                                      _buildAboutCity(),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 40),
-                                // ПРАВА КОЛОНКА (Інфо + Кнопка Review знизу)
-                                Expanded(
-                                  flex: 4, 
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _buildCityInfo(context),
-                                      const Spacer(), // Відштовхує кнопку Review в самий низ
-                                      _buildReviewButton(context),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      
-                      const SizedBox(height: 60),
-
-                      // СЕКЦІЯ ВІДГУКІВ
-                      Text('Latest reviews', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppState.textMain)),
-                      const SizedBox(height: 24),
-                      Wrap(spacing: 24, runSpacing: 24, children: [_buildReviewCard(), _buildReviewCard(), _buildReviewCard()]),
-                      const SizedBox(height: 60),
+                      Expanded(
+                        flex: 6,
+                        child: Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: _buildLeftSection(context, isMobile),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 4,
+                        child: _buildRightSection(context, isMobile),
+                      ),
                     ],
                   ),
-                ),
-              ),
-            ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  // ФОТО-ПЛЕЙСХОЛДЕР
-  Widget _buildImage() {
-    return AspectRatio(
-      aspectRatio: 4 / 3,
-      child: Container(decoration: BoxDecoration(color: AppState.isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEBEBEB), borderRadius: BorderRadius.circular(8)), child: Center(child: Icon(Icons.image_outlined, size: 80, color: AppState.textMuted.withOpacity(0.3)))),
-    );
-  }
-
-  // БЛОК "ABOUT CITY"
-  Widget _buildAboutCity() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: AppState.bgCard, border: Border.all(color: AppState.border), borderRadius: BorderRadius.circular(8)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('About city', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppState.textMain)), 
-              Icon(Icons.keyboard_arrow_up, color: AppState.textMain)
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text('Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list.', style: TextStyle(color: AppState.textMuted, height: 1.5)),
-        ],
-      ),
-    );
-  }
-
-  // ІНФОРМАЦІЯ ПРО МІСТО (Права колонка)
-  Widget _buildCityInfo(BuildContext context) {
+  Widget _buildLeftSection(BuildContext context, bool isMobile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(city.name, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppState.textMain)),
-            ValueListenableBuilder(
-              valueListenable: AppState.favorites,
-              builder: (context, _, __) {
-                bool isFav = AppState.isFavorite(city);
-                return GestureDetector(
-                  onTap: () => AppState.toggleFavorite(city),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(color: Color(0xFF2D2D2D), shape: BoxShape.circle),
-                      child: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: Colors.white, size: 20),
-                    ),
-                  ),
-                );
-              }
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-          child: const Text('Tag', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
-        ),
-        const SizedBox(height: 16),
-        
-        ValueListenableBuilder(
-          valueListenable: AppState.currency,
-          builder: (context, _, __) {
-            int convertedPrice = AppState.convertPrice(city.averagePrice);
-            String symbol = AppState.getCurrencySymbol();
-            
-            return RichText(
-              text: TextSpan(
-                style: TextStyle(color: AppState.textMain),
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextSpan(text: symbol, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  TextSpan(text: '$convertedPrice', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, letterSpacing: -2)),
+                  _buildImage(isMobile), // <-- Передаємо isMobile
+                  const SizedBox(height: 24),
+                  _buildTitleAndPrice(),
+                  const SizedBox(height: 24),
+                  _buildMetricsGrid(),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildImage(isMobile), // <-- Передаємо isMobile
+                  const SizedBox(width: 24), 
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTitleAndPrice(),
+                        const SizedBox(height: 24),
+                        _buildMetricsGrid(),
+                      ],
+                    ),
+                  )
                 ],
               ),
-            );
-          }
-        ),
         
-        const SizedBox(height: 24),
+        SizedBox(height: isMobile ? 32 : 40),
         
-        // --- БЕЙДЖІ (ТЕПЕР ІЗ ТЕМПЕРАТУРОЮ З JSON ТА КОНВЕРТАЦІЄЮ) ---
-       ValueListenableBuilder(
-          valueListenable: AppState.tempUnit,
-          builder: (context, _, __) {
-            String unit = AppState.tempUnit.value; // 'C' або 'F'
-            
-            // Беремо температуру з JSON
-            int tempC = city.temperature.toInt(); 
-            
-            // Конвертуємо, якщо Фаренгейт
-            int displayTemp = unit == 'F' ? (tempC * 9 ~/ 5 + 32) : tempC;
-            
-            // ДОДАЛИ КРУЖЕЧОК "°" ОСЬ ТУТ:
-            return _buildStatBadge(Icons.wb_sunny_outlined, '$displayTemp°$unit');
-          }
-        ),
-        _buildStatBadge(Icons.wifi, 'Internet speed'),
-        _buildStatBadge(Icons.language, 'Language'),
-        _buildStatBadge(Icons.location_on_outlined, 'Infrastructure'),
-        _buildStatBadge(Icons.trending_up, 'Prices'),
-        
-        const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2D2D2D), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
-            onPressed: () {}, icon: const Icon(Icons.play_circle_fill, size: 18), label: const Text('Music'),
-          ),
+        _ExpandableAboutSection(
+          cityName: city.name,
+          description: '${city.name} is a breathtaking city, famous for its stunning architecture and vibrant energy. It perfectly blends a rich historical past with modern lifestyle, making it one of the most atmospheric places to live.',
+          bgScreen: bgScreen,
         ),
       ],
     );
   }
 
-  // ОНОВЛЕНИЙ БЕЙДЖ
-  Widget _buildStatBadge(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppState.isDark ? const Color(0xFF333333) : const Color(0xFFEBEBEB), 
-          borderRadius: BorderRadius.circular(16)
+  Widget _buildRightSection(BuildContext context, bool isMobile) {
+    return Container(
+      margin: EdgeInsets.only(
+        top: isMobile ? 0 : 20, 
+        bottom: isMobile ? 0 : 20, 
+        right: isMobile ? 0 : 20
+      ),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: bgScreen,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(isMobile ? 0 : 32),
+          topRight: Radius.circular(isMobile ? 40 : 32),
+          bottomLeft: Radius.circular(isMobile ? 40 : 32),
+          bottomRight: Radius.circular(isMobile ? 40 : 32),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+      ),
+      child: Column(
+        children: [
+          Column(
+            children: [
+              _buildMockReviewCard(),
+              const SizedBox(height: 16),
+              _buildMockReviewCard(),
+              const SizedBox(height: 16),
+              _buildMockReviewCard(),
+            ],
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ReviewScreen(city: city)));
+            },
+            icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.black87),
+            label: const Text('LEAVE A REVIEW', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.black87)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              elevation: 2,
+              shadowColor: Colors.black.withValues(alpha: 0.1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // === ВІДРЕГУЛЬОВАНЕ ФОТО ===
+  Widget _buildImage(bool isMobile) {
+    return Container(
+      // НА МОБАЙЛІ - НА ВСЮ ШИРИНУ, НА ПК - 260
+      width: isMobile ? double.infinity : 260, 
+      height: 360, 
+      decoration: BoxDecoration(
+        color: bgScreen,
+        borderRadius: BorderRadius.circular(32),
+        image: city.image.isNotEmpty ? DecorationImage(image: NetworkImage(city.image), fit: BoxFit.cover) : null,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 10))
+        ],
+      ),
+      child: city.image.isEmpty ? const Center(child: Icon(Icons.image, size: 64, color: Colors.grey)) : null,
+    );
+  }
+
+  Widget _buildTitleAndPrice() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(icon, size: 14, color: AppState.textMain),
-            const SizedBox(width: 6),
-            Text(text, style: TextStyle(color: AppState.textMain, fontWeight: FontWeight.bold, fontSize: 12)),
+            Expanded(
+              child: Text(
+                city.name.toUpperCase(), 
+                style: const TextStyle(fontFamily: 'DM Serif Text', fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white, height: 1.1),
+              ),
+            ),
+            ValueListenableBuilder<List<City>>(
+              valueListenable: AppState.favorites,
+              builder: (context, favorites, child) {
+                bool isFav = AppState.isFavorite(city);
+                return MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () => AppState.toggleFavorite(city),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      child: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: bgCard, size: 20),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        ValueListenableBuilder<String>(
+          valueListenable: AppState.currency,
+          builder: (context, currentCurrency, child) {
+            String price = AppState.convertPrice(city.averagePrice.toInt()).toString();
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6.0, right: 2.0),
+                  child: Text(AppState.getCurrencySymbol(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+                Text(price, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 6.0, left: 4.0),
+                  child: Text('/ mo', style: TextStyle(fontSize: 16, color: Colors.white70, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 
-  // ЧОРНА КНОПКА REVIEW БЕЗ ЛІНІЇ
-  Widget _buildReviewButton(BuildContext context) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF2D2D2D), 
-        foregroundColor: Colors.white, 
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        elevation: 0,
-      ),
-      // ПЛАВНИЙ ПЕРЕХІД НА ЕКРАН ВІДГУКІВ
-      onPressed: () => Navigator.push(context, PremiumTransition(page: ReviewScreen(city: city))),
-      child: const Text('Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+  Widget _buildMetricsGrid() {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        _buildMetricChip(Icons.wb_sunny_outlined, city.temperature != null ? '${city.temperature}°C' : 'Temp: N/A'),
+        _buildMetricChip(Icons.air, city.airQualityIndex != null ? 'AQI: ${city.airQualityIndex}' : 'AQI: N/A'),
+        _buildMetricChip(Icons.wifi, city.internetSpeed != null ? '${city.internetSpeed} Mbps' : 'Net: N/A'),
+        _buildMetricChip(Icons.security, city.safetyIndex != null ? 'Safety: ${city.safetyIndex}/10' : 'Safety: N/A'),
+        _buildMetricChip(Icons.compress, city.atmosphericPressure != null ? '${city.atmosphericPressure} hPa' : 'Press: N/A'),
+        _buildMetricChip(Icons.bed_outlined, city.rent1Room != null ? '1-bed: \$${city.rent1Room}' : '1-bed: N/A'),
+        _buildMetricChip(Icons.bed, city.rent2Room != null ? '2-bed: \$${city.rent2Room}' : '2-bed: N/A'),
+        _buildMetricChip(Icons.bedroom_parent_outlined, city.rent3Room != null ? '3-bed: \$${city.rent3Room}' : '3-bed: N/A'),
+        _buildMetricChip(Icons.house_outlined, city.rentHouse != null ? 'House: \$${city.rentHouse}' : 'House: N/A'),
+        _buildMetricChip(Icons.local_taxi_outlined, city.taxiPrice != null ? 'Taxi: \$${city.taxiPrice}' : 'Taxi: N/A'),
+        _buildMetricChip(Icons.directions_bus_outlined, city.publicTransportPrice != null ? 'Transit: \$${city.publicTransportPrice}' : 'Transit: N/A'),
+      ],
     );
   }
 
-  // КАРТКА ВІДГУКУ
-  Widget _buildReviewCard() {
+  Widget _buildMetricChip(IconData icon, String label) {
     return Container(
-      width: 300, padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: AppState.bgCard, border: Border.all(color: AppState.border), borderRadius: BorderRadius.circular(8)),
+      width: 140, 
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: bgChip,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 4, offset: const Offset(-2, -2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(2, 2)),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: textDark),
+          const SizedBox(width: 6),
+          Expanded(child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: textDark), overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMockReviewCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: List.generate(5, (index) => Icon(Icons.star_border, size: 20, color: AppState.textMain))),
-          const SizedBox(height: 16),
-          Text('Review title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppState.textMain)),
+          Row(children: List.generate(5, (index) => const Icon(Icons.star, color: Color(0xFFC9BA9B), size: 16))),
           const SizedBox(height: 8),
-          Text('Review body', style: TextStyle(color: AppState.textMuted)),
-          const SizedBox(height: 24),
+          const Text('Review title', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          const Text('Review body goes here. It was an amazing experience visiting this beautiful city.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 16),
           Row(
             children: [
-              CircleAvatar(
-                backgroundImage: const NetworkImage('https://randomuser.me/api/portraits/women/44.jpg'),
-                backgroundColor: AppState.isDark ? const Color(0xFF333333) : const Color(0xFFEBEBEB),
-              ),
-              const SizedBox(width: 12),
+              const CircleAvatar(radius: 12, backgroundColor: Colors.grey, child: Icon(Icons.person, size: 16, color: Colors.white)),
+              const SizedBox(width: 8),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start, 
-                children: [
-                  Text('Reviewer name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppState.textMain)), 
-                  Text('Date', style: TextStyle(color: AppState.textMuted, fontSize: 12))
-                ]
-              ),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Reviewer name', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  Text('Date', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                ],
+              )
             ],
           )
         ],
+      ),
+    );
+  }
+}
+
+class _ExpandableAboutSection extends StatefulWidget {
+  final String cityName;
+  final String description;
+  final Color bgScreen;
+
+  const _ExpandableAboutSection({required this.cityName, required this.description, required this.bgScreen});
+
+  @override
+  State<_ExpandableAboutSection> createState() => _ExpandableAboutSectionState();
+}
+
+class _ExpandableAboutSectionState extends State<_ExpandableAboutSection> {
+  bool _isExpanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.bgScreen,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _isExpanded,
+          onExpansionChanged: (expanded) => setState(() => _isExpanded = expanded),
+          title: Text('ABOUT ${widget.cityName.toUpperCase()}', style: const TextStyle(fontSize: 14, letterSpacing: 1.5, fontWeight: FontWeight.bold, color: Colors.black54)),
+          iconColor: Colors.black54,
+          collapsedIconColor: Colors.black54,
+          childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+          children: [
+            Text(widget.description, style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.6))
+          ],
+        ),
       ),
     );
   }

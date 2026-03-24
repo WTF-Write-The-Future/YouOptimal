@@ -12,7 +12,7 @@ class AboutUsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppState.bgMain,
-      appBar: const MainAppHeader(), // Наш чистий хедер
+      appBar: const MainAppHeader(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -81,20 +81,20 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  // БАЗОВИЙ ВІДЖЕТ КАРТКИ (Оновлені розміри)
+  // БАЗОВИЙ ВІДЖЕТ КАРТКИ
   Widget _buildCardBase(String title, List<TextSpan> spans, {bool isTall = false}) {
     return Container(
-      width: 340, // Трохи розширили для кращої читабельності тексту
-      height: isTall ? 504 : 240, // Збільшили висоту: 240 + 24 (відступ) + 240 = 504
+      width: 340,
+      height: isTall ? 504 : 240, // Збільшили висоту
       decoration: BoxDecoration(
         color: AppState.bgCard, 
         borderRadius: BorderRadius.circular(24), 
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 25, offset: const Offset(0, 8))]
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.06), blurRadius: 25, offset: const Offset(0, 8))]
       ),
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(28), // Трохи зменшили відступи від країв
+            padding: const EdgeInsets.all(28), // відступи від країв
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -112,7 +112,7 @@ class AboutUsScreen extends StatelessWidget {
             ),
           ),
           
-          // ІДЕАЛЬНА ДУГА: Малюємо велике коло і обрізаємо його (обхід бага Flutter)
+          //  ДУГА: Малюємо велике коло і обрізаємо його
           Positioned(
             bottom: 0,
             right: 0,
@@ -126,7 +126,7 @@ class AboutUsScreen extends StatelessWidget {
                       bottom: 0,
                       right: 0,
                       child: Container(
-                        width: 48, // Робимо коло вдвічі більшим
+                        width: 48,
                         height: 48,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,

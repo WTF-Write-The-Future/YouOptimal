@@ -32,7 +32,7 @@ class RegisterScreen extends StatelessWidget {
                   Container(
                     width: 380,
                     padding: const EdgeInsets.all(40),
-                    decoration: BoxDecoration(color: AppState.bgCard, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, 10))]),
+                    decoration: BoxDecoration(color: AppState.bgCard, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 30, offset: const Offset(0, 10))]),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [

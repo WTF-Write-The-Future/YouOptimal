@@ -1,55 +1,36 @@
 import 'package:flutter/material.dart';
-import 'dart:ui'; // Потрібно для налаштування миші та тачпаду
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Твої імпорти екранів та стану (залиш свої, якщо вони відрізняються)
 import 'screens/home_screen.dart';
-import 'state/app_state.dart'; 
 
-void main() {
-  runApp(const YouOptimalApp());
+void main() async {
+  // Цей рядок обов'язковий перед ініціалізацією бази
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Підключаємося до бази даних Supabase
+  await Supabase.initialize(
+    url: 'https://mywhapfxkqjvqtakfxfe.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15d2hhcGZ4a3FqdnF0YWtmeGZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODkwODIsImV4cCI6MjA4Nzg2NTA4Mn0.ZgN4lcZ_Qwn9YXRKsTChZye6GWgAYEt-s05iswep-NQ',
+  );
+
+  runApp(const MyApp());
 }
 
-// 1. СТВОРЮЄМО КАСТОМНУ ФІЗИКУ СКРОЛІНГУ
-class SmoothScrollBehavior extends MaterialScrollBehavior {
-  // Дозволяємо тягнути екран мишкою на Web/Desktop
-  @override
-  Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-      };
-
-  // Вмикаємо плавну iOS-фізику (Bouncing) для всіх списків
-  @override
-  ScrollPhysics getScrollPhysics(BuildContext context) {
-    return const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
-  }
-}
-
-class YouOptimalApp extends StatelessWidget {
-  const YouOptimalApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<String>(
-      valueListenable: AppState.theme,
-      builder: (context, themeValue, _) {
-        // Логіка твоєї теми...
-        
-        return MaterialApp(
-          title: 'YouOptimal',
-          debugShowCheckedModeBanner: false,
-          
-          // 2. ПІДКЛЮЧАЄМО НАШ ПЛАВНИЙ СКРОЛІНГ СЮДИ
-          scrollBehavior: SmoothScrollBehavior(), 
-          
-          theme: ThemeData(
-            scaffoldBackgroundColor: AppState.bgMain,
-            fontFamily: 'Roboto', // Або ваш фірмовий шрифт
-          ),
-          home: const HomeScreen(),
-        );
-      },
+    return MaterialApp(
+      title: 'YouOptimal',
+      debugShowCheckedModeBanner: false, // Прибираємо червону стрічку "DEBUG"
+      theme: ThemeData(
+        primaryColor: const Color(0xFF485759),
+        scaffoldBackgroundColor: const Color(0xFFF7F3E8), // Ваш фірмовий фон
+        fontFamily: 'Georgia', // Основний шрифт із макетів
+        useMaterial3: true,
+      ),
+      home: const HomeScreen(), // Запускаємо головний екран
     );
   }
 }

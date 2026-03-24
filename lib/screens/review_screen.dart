@@ -46,12 +46,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
               child: SingleChildScrollView(
                 child: Container(
                   width: 500, 
-                  margin: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 0), // Марджини щоб не прилипало до країв
+                  margin: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 0), // Додаткові відступи з боків на мобілці
                   padding: EdgeInsets.all(isMobile ? 24 : 40), // Менший паддінг на телефоні
                   decoration: BoxDecoration(
                     color: AppState.bgCard, 
                     borderRadius: BorderRadius.circular(24), 
-                    boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, 10))]
+                    boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 30, offset: const Offset(0, 10))]
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -78,7 +78,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       
                       const SizedBox(height: 24),
                       
-                      // ОСЬ ТУТ РЕАГУЄМО НА РОЗМІР ЕКРАНУ
                       if (isMobile)
                         Column(
                           children: [
@@ -123,7 +122,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  // Виніс логіку блоків у окремі методи для чистоти
+  // Виніс логіку блоків рейтингу та завантаження в окремі методи для чистоти коду
   Widget _buildRateBlock(bool isMobile) {
     return Container(
       width: double.infinity,
@@ -132,7 +131,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         color: AppState.bgCard,
         border: Border.all(color: AppState.border), 
         borderRadius: BorderRadius.circular(16),
-        boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 5))]
+        boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha:0.02), blurRadius: 15, offset: const Offset(0, 5))]
       ),
       child: Column(
         children: [
@@ -161,7 +160,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         color: AppState.bgCard,
         border: Border.all(color: AppState.border), 
         borderRadius: BorderRadius.circular(16),
-        boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 5))]
+        boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha:0.02), blurRadius: 15, offset: const Offset(0, 5))]
       ),
       child: Column(
         children: [

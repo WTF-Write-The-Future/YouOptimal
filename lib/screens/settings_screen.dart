@@ -7,12 +7,11 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ОБГОРТАЄМО ВЕСЬ ЕКРАН, ЩОБ ФОН ЗМІНЮВАВСЯ ОДРАЗУ
     return ValueListenableBuilder<String>(
       valueListenable: AppState.theme,
       builder: (context, _, __) {
         return Scaffold(
-          backgroundColor: AppState.bgMain, // Тепер фон оновлюватиметься миттєво!
+          backgroundColor: AppState.bgMain, 
           appBar: const MainAppHeader(), 
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,7 +41,7 @@ class SettingsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppState.bgCard, 
                         borderRadius: BorderRadius.circular(24), 
-                        boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 8))]
+                        boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withValues(alpha:0.04), blurRadius: 20, offset: const Offset(0, 8))]
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -51,7 +50,7 @@ class SettingsScreen extends StatelessWidget {
                           Text('Settings', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: AppState.textMain)),
                           const SizedBox(height: 32),
                           
-                          // THEMES (Language успішно видалено!)
+                          // THEMES 
                           _buildSettingSection('Themes', [
                             _buildThemeToggle('Light', AppState.theme.value == 'Light', () => AppState.theme.value = 'Light'),
                             _buildThemeToggle('Dark', AppState.theme.value == 'Dark', () => AppState.theme.value = 'Dark'),
@@ -144,7 +143,7 @@ class SettingsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isActive ? AppState.bgCard : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: isActive ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2))] : [],
+                  boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha:0.08), blurRadius: 4, offset: const Offset(0, 2))] : [],
                 ),
                 child: Text(option, style: TextStyle(color: AppState.textMain, fontWeight: isActive ? FontWeight.bold : FontWeight.w600, fontSize: 13)),
               ),
@@ -165,7 +164,7 @@ class SettingsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: isActive ? AppState.bgCard : (AppState.isDark ? const Color(0xFF333333) : const Color(0xFFE8E8E8)),
             borderRadius: BorderRadius.circular(20),
-            boxShadow: isActive ? [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2))] : [],
+            boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha:0.08), blurRadius: 4, offset: const Offset(0, 2))] : [],
           ),
           child: Text(text, style: TextStyle(color: AppState.textMain, fontWeight: isActive ? FontWeight.bold : FontWeight.w600, fontSize: 13)),
         ),

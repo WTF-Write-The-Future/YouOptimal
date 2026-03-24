@@ -19,18 +19,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppState.bgMain,
+      backgroundColor: const Color(0xFFF7F3E8), // Фірмовий фон
       appBar: const MainAppHeader(showFavourite: true),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ЧОРНА КНОПКА НАЗАД
+          // Кнопка назад
           Padding(
             padding: const EdgeInsets.only(left: 40.0, top: 24.0, bottom: 20.0),
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: MouseRegion(
-                cursor: SystemMouseCursors.click,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
                 child: Container(
                   width: 32, height: 32, 
                   decoration: const BoxDecoration(color: Color(0xFF2D2D2D), shape: BoxShape.circle), 
@@ -41,29 +41,32 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           ),
           
           Expanded(
-            child: ValueListenableBuilder(
+            child: ValueListenableBuilder<List<City>>(
               valueListenable: AppState.favorites,
               builder: (context, favorites, _) {
-                // --- ОСЬ ТУТ ЗМІНЕНО СТИЛЬ ТЕКСТУ ---
                 if (favorites.isEmpty) {
                   return Center(
                     child: Text(
                       'No favourite cities yet ❤️', 
                       style: TextStyle(
-                        fontSize: 24, // Трохи збільшили
-                        fontWeight: FontWeight.bold, // Зробили жирним
-                        color: AppState.textMain // Зробили основним темним кольором
+                        fontFamily: 'DM Serif Text',
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppState.textMain
                       )
                     )
                   );
                 }
 
+                // Логіка пагінації
                 int totalPages = (favorites.length / _itemsPerPage).ceil();
                 if (totalPages == 0) totalPages = 1;
-                
                 if (_currentPage > totalPages) _currentPage = totalPages;
 
-                List<City> paginatedFavorites = favorites.skip((_currentPage - 1) * _itemsPerPage).take(_itemsPerPage).toList();
+                List<City> paginatedFavorites = favorites
+                    .skip((_currentPage - 1) * _itemsPerPage)
+                    .take(_itemsPerPage)
+                    .toList();
 
                 return Center(
                   child: SingleChildScrollView(
@@ -72,102 +75,27 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       constraints: const BoxConstraints(maxWidth: 1100),
                       padding: const EdgeInsets.all(40),
                       decoration: BoxDecoration(
-                        color: AppState.bgCard, 
+                        color: Colors.white, 
                         borderRadius: BorderRadius.circular(24), 
-                        boxShadow: AppState.isDark ? [] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, 10))]
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05), 
+                            blurRadius: 30, 
+                            offset: const Offset(0, 10)
+                          )
+                        ]
                       ),
                       child: Column(
                         children: [
                           Wrap(
                             spacing: 24, runSpacing: 24,
                             alignment: WrapAlignment.center,
-                            children: paginatedFavorites.map((city) {
-                              return Container(
-                                width: 300,
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: AppState.bgCard, 
-                                  borderRadius: BorderRadius.circular(16), 
-                                  border: Border.all(color: AppState.border)
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      height: 180, 
-                                      decoration: BoxDecoration(color: AppState.isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEBEBEB), borderRadius: BorderRadius.circular(8)), 
-                                      child: Center(child: Icon(Icons.image_outlined, color: AppState.textMuted.withOpacity(0.3), size: 64))
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(city.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppState.textMain)),
-                                    const SizedBox(height: 4),
-                                    ValueListenableBuilder(
-                                      valueListenable: AppState.currency,
-                                      builder: (context, _, __) {
-                                        int convertedPrice = AppState.convertPrice(city.averagePrice);
-                                        String symbol = AppState.getCurrencySymbol();
-                                        return Text('$symbol$convertedPrice', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1, color: AppState.textMain));
-                                      }
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(city.country, style: TextStyle(color: AppState.textMuted, fontSize: 14)), 
-                                    const SizedBox(height: 24),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF2D2D2D),
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                            elevation: 0,
-                                          ),
-                                          onPressed: () => Navigator.push(context, PremiumTransition(page: CityDetailsScreen(city: city))),
-                                          child: const Text('VIEW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
-                                        ),
-                                        GestureDetector(
-                                          onTap: () {
-                                            AppState.toggleFavorite(city);
-                                            setState(() {}); 
-                                          },
-                                          child: MouseRegion(
-                                            cursor: SystemMouseCursors.click, 
-                                            child: Container(
-                                              padding: const EdgeInsets.all(12), 
-                                              decoration: const BoxDecoration(color: Color(0xFF2D2D2D), shape: BoxShape.circle), 
-                                              child: const Icon(Icons.favorite, color: Colors.white, size: 18)
-                                            )
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  ],
-                                ),
-                              );
-                            }).toList(),
+                            children: paginatedFavorites.map((city) => _buildFavoriteCard(city)).toList(),
                           ),
+                          
                           if (totalPages > 1) ...[
                             const SizedBox(height: 40),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                GestureDetector(
-                                  onTap: () { if (_currentPage > 1) setState(() => _currentPage--); },
-                                  child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('← Previous', style: TextStyle(color: _currentPage > 1 ? AppState.textMuted : AppState.border, fontWeight: FontWeight.bold, fontSize: 12))),
-                                ),
-                                const SizedBox(width: 16),
-                                ...List.generate(totalPages, (index) {
-                                  int pageNum = index + 1;
-                                  return _buildPageNumber(pageNum, isActive: pageNum == _currentPage);
-                                }),
-                                const SizedBox(width: 16),
-                                GestureDetector(
-                                  onTap: () { if (_currentPage < totalPages) setState(() => _currentPage++); },
-                                  child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('Next →', style: TextStyle(color: _currentPage < totalPages ? AppState.textMain : AppState.border, fontWeight: FontWeight.bold, fontSize: 12))),
-                                ),
-                              ],
-                            )
+                            _buildPagination(totalPages),
                           ]
                         ],
                       ),
@@ -182,6 +110,109 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
+  // Картка міста в обраному
+  Widget _buildFavoriteCard(City city) {
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(16), 
+        border: Border.all(color: const Color(0xFFE0E0E0))
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Зображення міста
+          Container(
+            height: 180, 
+            decoration: BoxDecoration(
+              color: const Color(0xFFEBEBEB), 
+              borderRadius: BorderRadius.circular(8),
+              image: city.image.isNotEmpty 
+                ? DecorationImage(image: NetworkImage(city.image), fit: BoxFit.cover) 
+                : null,
+            ), 
+            child: city.image.isEmpty 
+              ? Center(child: Icon(Icons.image_outlined, color: Colors.grey.withValues(alpha: 0.3), size: 64))
+              : null,
+          ),
+          const SizedBox(height: 16),
+          Text(city.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'DM Serif Text')),
+          const SizedBox(height: 4),
+          
+          // Ціна з конвертацією
+          ValueListenableBuilder(
+            valueListenable: AppState.currency,
+            builder: (context, _, __) {
+              int convertedPrice = AppState.convertPrice(city.averagePrice.toInt());
+              String symbol = AppState.getCurrencySymbol();
+              return Text('$symbol$convertedPrice', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1));
+            }
+          ),
+          const SizedBox(height: 4),
+          Text(city.country, style: const TextStyle(color: Colors.grey, fontSize: 14)), 
+          const SizedBox(height: 24),
+          
+          // Кнопки дій
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2D2D2D),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  elevation: 0,
+                ),
+                onPressed: () => Navigator.push(context, PremiumTransition(page: CityDetailsScreen(city: city))),
+                child: const Text('VIEW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
+              ),
+              MouseRegion(
+                cursor: SystemMouseCursors.click, 
+                child: GestureDetector(
+                  onTap: () {
+                    AppState.toggleFavorite(city);
+                    setState(() {}); 
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12), 
+                    decoration: const BoxDecoration(color: Color(0xFF2D2D2D), shape: BoxShape.circle), 
+                    child: const Icon(Icons.favorite, color: Colors.white, size: 18)
+                  )
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  // Блок пагінації
+  Widget _buildPagination(int totalPages) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        GestureDetector(
+          onTap: () { if (_currentPage > 1) setState(() => _currentPage--); },
+          child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('← Previous', style: TextStyle(color: _currentPage > 1 ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))),
+        ),
+        const SizedBox(width: 16),
+        ...List.generate(totalPages, (index) {
+          int pageNum = index + 1;
+          return _buildPageNumber(pageNum, isActive: pageNum == _currentPage);
+        }),
+        const SizedBox(width: 16),
+        GestureDetector(
+          onTap: () { if (_currentPage < totalPages) setState(() => _currentPage++); },
+          child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('Next →', style: TextStyle(color: _currentPage < totalPages ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPageNumber(int number, {bool isActive = false}) {
     return GestureDetector(
       onTap: () => setState(() => _currentPage = number),
@@ -192,7 +223,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           width: 28, height: 28,
           decoration: BoxDecoration(color: isActive ? const Color(0xFF2D2D2D) : Colors.transparent, borderRadius: BorderRadius.circular(4)),
           child: Center(
-            child: Text(number.toString(), style: TextStyle(color: isActive ? Colors.white : AppState.textMain, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, fontSize: 12))
+            child: Text(number.toString(), style: TextStyle(color: isActive ? Colors.white : Colors.black87, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, fontSize: 12))
           ),
         ),
       ),

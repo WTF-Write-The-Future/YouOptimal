@@ -9,11 +9,10 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppState.bgMain,
-      appBar: const MainAppHeader(), // <-- ТЕПЕР ТУТ НАШ НОВИЙ ЧИСТИЙ ХЕДЕР
+      appBar: const MainAppHeader(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // <-- А ОСЬ ТУТ НАША ЧОРНА КНОПКА НАЗАД (як на макеті)
           Padding(
             padding: const EdgeInsets.only(left: 40.0, top: 24.0),
             child: GestureDetector(
@@ -43,7 +42,7 @@ class LoginScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppState.bgCard, 
                       borderRadius: BorderRadius.circular(24), 
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 30, offset: const Offset(0, 10))]
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 30, offset: const Offset(0, 10))]
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
