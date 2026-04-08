@@ -48,11 +48,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadCitiesFromApi() async {
     try {
       final cities = await CityService.fetchCities();
+      
+      AppState.cachedCities = cities; 
+      
       setState(() {
         allCities = cities;
         _isLoading = false;
       });
       _applyFiltersAndSort();
+      
+      await AppState.syncFavorites(); 
+      await AppState.syncPreferences();
+
     } catch (e) {
       setState(() => _isLoading = false);
     }
@@ -114,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // === ПОВЕРНУТІ ФУНКЦІЇ ДІАЛОГІВ ТА ФІЛЬТРІВ ===
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -122,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         contentPadding: const EdgeInsets.all(32),
         title: const Center(
-          child: Text('Price Range', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 28, color: Color(0xFF485759))),
+          child: Text('Price Range', style: TextStyle(fontFamily: 'SFPro', fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF485759))),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -142,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _applyFiltersAndSort();
                       Navigator.pop(context);
                     },
-                    child: const Text('Reset', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 18, color: Colors.grey)),
+                    child: const Text('Reset', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey)),
                   ),
                 ),
                 Expanded(
@@ -158,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
                     ),
-                    child: const Text('Apply', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 18, color: Colors.black87)),
+                    child: const Text('Apply', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                   ),
                 ),
               ],
@@ -185,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         contentPadding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         title: const Center(
-          child: Text('Sort by', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 28, color: Color(0xFF485759))),
+          child: Text('Sort by', style: TextStyle(fontFamily: 'SFPro', fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF485759))),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -196,9 +204,10 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text(
                 option, 
                 style: TextStyle(
-                  fontFamily: 'DM Serif Text', 
+                  fontFamily: 'SFPro', 
                   fontSize: 20, 
-                  color: isSelected ? Colors.black87 : Colors.grey.shade500
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? Colors.black87 : Colors.grey.shade600
                 )
               ),
               trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFFC1D7D8)) : null,
@@ -221,27 +230,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Статичний заголовок НАД полем
         Padding(
           padding: const EdgeInsets.only(left: 12, bottom: 8),
           child: Text(
             title,
             style: const TextStyle(
-              fontFamily: 'DM Serif Text', 
+              fontFamily: 'SFPro', 
               fontSize: 14, 
               color: Colors.grey,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),
-        // Саме поле вводу
         TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          style: const TextStyle(fontFamily: 'DM Serif Text', fontSize: 18, color: Colors.black87),
+          style: const TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
           decoration: InputDecoration(
-            hintText: '0', // Легка підказка всередині
-            hintStyle: TextStyle(fontFamily: 'DM Serif Text', color: Colors.grey.shade400),
+            hintText: '0', 
+            hintStyle: TextStyle(fontFamily: 'SFPro', color: Colors.grey.shade400, fontWeight: FontWeight.w500),
             filled: true,
             fillColor: bgColor, 
             border: OutlineInputBorder(
@@ -252,6 +259,62 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // === ПОВЕРНЕННЯ ДО ОСНОВНОГО КОДУ ===
+  Widget _buildNoResults() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 80.0),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.search_off_rounded, 
+                size: 50,
+                color: Color(0xFF485759),
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            const Text(
+              'No results found',
+              style: TextStyle(
+                fontFamily: 'SFPro',
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF485759),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            Text(
+              "We couldn't find any places matching your search.\nTry adjusting your filters or search query.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'SFPro', 
+                fontSize: 16,
+                color: Colors.grey.shade500,
+                height: 1.5, 
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -283,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 alignment: Alignment.bottomRight,
                 child: Padding(
                   padding: EdgeInsets.only(right: isMobile ? 20 : 60, bottom: isMobile ? 20 : 40),
-                  child: Text('Discover your city.', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: isMobile ? 40 : 80, color: const Color(0xA6F5F5F5))),
+                  child: Text('Discover your city.', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold, fontSize: isMobile ? 40 : 80, color: const Color(0xA6F5F5F5))),
                 ),
               ),
             ),
@@ -303,9 +366,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: TextField(
                     controller: _searchController,
                     onChanged: (val) { _searchQuery = val; _applyFiltersAndSort(); },
+                    style: const TextStyle(fontFamily: 'SFPro'),
                     decoration: const InputDecoration(
                       hintText: 'Search',
-                      hintStyle: TextStyle(fontFamily: 'DM Serif Text', color: Colors.grey),
+                      hintStyle: TextStyle(fontFamily: 'SFPro', color: Colors.grey),
                       prefixIcon: Icon(Icons.search, color: Colors.grey),
                       contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 24),
                       border: InputBorder.none,
@@ -322,7 +386,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('For you', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 36, color: Color(0xFF485759))),
+                  const Text('For you', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold, fontSize: 36, color: Color(0xFF485759))),
                   const SizedBox(height: 8),
                   const Divider(color: Color(0xFFDCD5C6), thickness: 1),
                   const SizedBox(height: 16),
@@ -331,12 +395,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       GestureDetector(
-                        onTap: _showFilterDialog,
+                        onTap: _showFilterDialog, // <--- ТЕПЕР ФУНКЦІЯ Є І ПРАЦЮЄ
                         child: _buildFilterButton('Filter', Icons.filter_alt_outlined),
                       ),
                       const SizedBox(width: 12),
                       GestureDetector(
-                        onTap: _showSortDialog,
+                        onTap: _showSortDialog, // <--- ТЕПЕР ФУНКЦІЯ Є І ПРАЦЮЄ
                         child: _buildFilterButton(_currentSort == 'Default' ? 'Sort by' : 'Sorted', Icons.sort),
                       ),
                     ],
@@ -351,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF485759)))
                   : paginatedCities.isEmpty
-                      ? const Center(child: Text('No results found for your criteria.', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 18, color: Colors.grey)))
+                      ? _buildNoResults()
                       : GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -368,7 +432,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
             ),
             
-            // НОВИЙ ВИКЛИК РОЗУМНОЇ ПАГІНАЦІЇ
             if (!_isLoading && totalPages > 1) ...[
               const SizedBox(height: 60),
               _buildSmartPagination(totalPages),
@@ -389,24 +452,19 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(icon, size: 18, color: Colors.black87),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(fontFamily: 'DM Serif Text', fontSize: 16, color: Colors.black87)),
+          Text(text, style: const TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black87)),
         ],
       ),
     );
   }
 
-  // === РОЗУМНА ПАГІНАЦІЯ З КРАПКАМИ ТА СТРІЛКАМИ ===
- // === РОЗУМНА ПАГІНАЦІЯ (Адаптивна) ===
   Widget _buildSmartPagination(int totalPages) {
-    // Перевіряємо ширину екрану (якщо менше 600px - це точно телефон)
     bool isMobilePagination = MediaQuery.of(context).size.width < 600;
 
-    // 📱 КОНЦЕПЦІЯ 1: ДЛЯ МОБІЛЬНОГО (Компактна)
     if (isMobilePagination) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Кнопка "Назад"
           GestureDetector(
             onTap: () {
               if (_currentPage > 1) {
@@ -426,15 +484,13 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const SizedBox(width: 24),
           
-          // Текст замість цифр
           Text(
             'Page $_currentPage of $totalPages',
-            style: const TextStyle(fontFamily: 'DM Serif Text', fontSize: 18, color: Colors.black87, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontFamily: 'SFPro', fontSize: 18, color: Colors.black87, fontWeight: FontWeight.bold),
           ),
           
           const SizedBox(width: 24),
 
-          // Кнопка "Вперед"
           GestureDetector(
             onTap: () {
               if (_currentPage < totalPages) {
@@ -455,10 +511,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    // 💻 КОНЦЕПЦІЯ 2: ДЛЯ КОМП'ЮТЕРА (Розширена з крапочками)
     List<Widget> pages = [];
 
-    // Кнопка "Назад"
     pages.add(
       GestureDetector(
         onTap: () {
@@ -479,7 +533,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-    // Логіка генерації цифр і крапок
     for (int i = 1; i <= totalPages; i++) {
       if (i == 1 || i == totalPages || (i >= _currentPage - 1 && i <= _currentPage + 1)) {
         pages.add(_buildPageNumber(i, isActive: i == _currentPage));
@@ -493,7 +546,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // Кнопка "Вперед"
     pages.add(
       GestureDetector(
         onTap: () {
@@ -532,7 +584,7 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 6),
         width: 36, height: 36,
         decoration: BoxDecoration(color: isActive ? const Color(0xFFC1D7D8) : Colors.transparent, borderRadius: BorderRadius.circular(18)),
-        child: Center(child: Text(number.toString(), style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 16, color: isActive ? Colors.black87 : Colors.grey))),
+        child: Center(child: Text(number.toString(), style: TextStyle(fontFamily: 'SFPro', fontWeight: isActive ? FontWeight.bold : FontWeight.normal, fontSize: 16, color: isActive ? Colors.black87 : Colors.grey))),
       ),
     );
   }

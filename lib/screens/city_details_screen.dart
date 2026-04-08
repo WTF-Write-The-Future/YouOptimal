@@ -72,7 +72,7 @@ class CityDetailsScreen extends StatelessWidget {
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildImage(isMobile), // <-- Передаємо isMobile
+                  _buildImage(isMobile),
                   const SizedBox(height: 24),
                   _buildTitleAndPrice(),
                   const SizedBox(height: 24),
@@ -82,7 +82,7 @@ class CityDetailsScreen extends StatelessWidget {
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildImage(isMobile), // <-- Передаємо isMobile
+                  _buildImage(isMobile),
                   const SizedBox(width: 24), 
                   Expanded(
                     child: Column(
@@ -142,7 +142,7 @@ class CityDetailsScreen extends StatelessWidget {
               Navigator.push(context, MaterialPageRoute(builder: (context) => ReviewScreen(city: city)));
             },
             icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.black87),
-            label: const Text('LEAVE A REVIEW', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.black87)),
+            label: const Text('LEAVE A REVIEW', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.black87)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
@@ -156,10 +156,8 @@ class CityDetailsScreen extends StatelessWidget {
     );
   }
 
-  // === ВІДРЕГУЛЬОВАНЕ ФОТО ===
   Widget _buildImage(bool isMobile) {
     return Container(
-      // НА МОБАЙЛІ - НА ВСЮ ШИРИНУ, НА ПК - 260
       width: isMobile ? double.infinity : 260, 
       height: 360, 
       decoration: BoxDecoration(
@@ -184,7 +182,7 @@ class CityDetailsScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 city.name.toUpperCase(), 
-                style: const TextStyle(fontFamily: 'DM Serif Text', fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white, height: 1.1),
+                style: const TextStyle(fontFamily: 'SFPro', fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white, height: 1.1),
               ),
             ),
             ValueListenableBuilder<List<City>>(
@@ -194,7 +192,7 @@ class CityDetailsScreen extends StatelessWidget {
                 return MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
-                    onTap: () => AppState.toggleFavorite(city),
+                    onTap: () => AppState.toggleFavorite(context, city),
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
@@ -216,12 +214,12 @@ class CityDetailsScreen extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6.0, right: 2.0),
-                  child: Text(AppState.getCurrencySymbol(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: Text(AppState.getCurrencySymbol(), style: const TextStyle(fontFamily: 'SFPro', fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
-                Text(price, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)),
+                Text(price, style: const TextStyle(fontFamily: 'SFPro', fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)),
                 const Padding(
                   padding: EdgeInsets.only(bottom: 6.0, left: 4.0),
-                  child: Text('/ mo', style: TextStyle(fontSize: 16, color: Colors.white70, fontWeight: FontWeight.bold)),
+                  child: Text('/ mo', style: TextStyle(fontFamily: 'SFPro', fontSize: 16, color: Colors.white70, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -236,7 +234,16 @@ class CityDetailsScreen extends StatelessWidget {
       spacing: 12,
       runSpacing: 12,
       children: [
-        _buildMetricChip(Icons.wb_sunny_outlined, city.temperature != null ? '${city.temperature}°C' : 'Temp: N/A'),
+        ValueListenableBuilder<String>(
+          valueListenable: AppState.tempUnit, 
+          builder: (context, _, __) {
+            String tempText = 'Temp: N/A';
+            if (city.temperature != null) {
+              tempText = AppState.getFormattedTemperature(city.temperature!.toDouble());
+            }
+            return _buildMetricChip(Icons.wb_sunny_outlined, tempText);
+          }
+        ),
         _buildMetricChip(Icons.air, city.airQualityIndex != null ? 'AQI: ${city.airQualityIndex}' : 'AQI: N/A'),
         _buildMetricChip(Icons.wifi, city.internetSpeed != null ? '${city.internetSpeed} Mbps' : 'Net: N/A'),
         _buildMetricChip(Icons.security, city.safetyIndex != null ? 'Safety: ${city.safetyIndex}/10' : 'Safety: N/A'),
@@ -268,7 +275,7 @@ class CityDetailsScreen extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: textDark),
           const SizedBox(width: 6),
-          Expanded(child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: textDark), overflow: TextOverflow.ellipsis)),
+          Expanded(child: Text(label, style: TextStyle(fontFamily: 'SFPro', fontSize: 11, fontWeight: FontWeight.bold, color: textDark), overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
@@ -287,9 +294,9 @@ class CityDetailsScreen extends StatelessWidget {
         children: [
           Row(children: List.generate(5, (index) => const Icon(Icons.star, color: Color(0xFFC9BA9B), size: 16))),
           const SizedBox(height: 8),
-          const Text('Review title', style: TextStyle(fontFamily: 'DM Serif Text', fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Review title', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          const Text('Review body goes here. It was an amazing experience visiting this beautiful city.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const Text('Review body goes here. It was an amazing experience visiting this beautiful city.', style: TextStyle(fontFamily: 'SFPro', fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -298,8 +305,8 @@ class CityDetailsScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('Reviewer name', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  Text('Date', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  Text('Reviewer name', style: TextStyle(fontFamily: 'SFPro', fontSize: 11, fontWeight: FontWeight.bold)),
+                  Text('Date', style: TextStyle(fontFamily: 'SFPro', fontSize: 10, color: Colors.grey)),
                 ],
               )
             ],
@@ -336,12 +343,12 @@ class _ExpandableAboutSectionState extends State<_ExpandableAboutSection> {
         child: ExpansionTile(
           initiallyExpanded: _isExpanded,
           onExpansionChanged: (expanded) => setState(() => _isExpanded = expanded),
-          title: Text('ABOUT ${widget.cityName.toUpperCase()}', style: const TextStyle(fontSize: 14, letterSpacing: 1.5, fontWeight: FontWeight.bold, color: Colors.black54)),
+          title: Text('ABOUT ${widget.cityName.toUpperCase()}', style: const TextStyle(fontFamily: 'SFPro', fontSize: 14, letterSpacing: 1.5, fontWeight: FontWeight.bold, color: Colors.black54)),
           iconColor: Colors.black54,
           collapsedIconColor: Colors.black54,
           childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
           children: [
-            Text(widget.description, style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.6))
+            Text(widget.description, style: const TextStyle(fontFamily: 'SFPro', fontSize: 13, color: Colors.black87, height: 1.6))
           ],
         ),
       ),

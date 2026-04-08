@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
-  // Цей рядок обов'язковий перед ініціалізацією бази
   WidgetsFlutterBinding.ensureInitialized();
 
   // Підключаємося до бази даних Supabase
@@ -27,7 +26,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: const Color(0xFF485759),
         scaffoldBackgroundColor: const Color(0xFFF7F3E8), // Ваш фірмовий фон
-        fontFamily: 'Georgia', // Основний шрифт із макетів
+        fontFamily: 'SFPro', // Основний шрифт із макетів
         useMaterial3: true,
       ),
       home: const HomeScreen(), // Запускаємо головний екран

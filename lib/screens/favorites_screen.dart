@@ -4,6 +4,7 @@ import '../state/app_state.dart';
 import '../models/city.dart';
 import 'city_details_screen.dart';
 import '../utils/premium_transition.dart';
+import '../screens/auth_screen.dart'; // Не забудь імпортувати екран авторизації
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -19,46 +20,31 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F3E8), // Фірмовий фон
+      backgroundColor: const Color(0xFFF7F3E8),
       appBar: const MainAppHeader(showFavourite: true),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Кнопка назад
-          Padding(
-            padding: const EdgeInsets.only(left: 40.0, top: 24.0, bottom: 20.0),
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: 32, height: 32, 
-                  decoration: const BoxDecoration(color: Color(0xFF2D2D2D), shape: BoxShape.circle), 
-                  child: const Icon(Icons.arrow_back, color: Colors.white, size: 16)
-                ),
-              ),
-            ),
-          ),
+          // СТРІЛКУ НАЗАД ВИДАЛЕНО
           
           Expanded(
             child: ValueListenableBuilder<List<City>>(
               valueListenable: AppState.favorites,
               builder: (context, favorites, _) {
                 if (favorites.isEmpty) {
-                  return Center(
+                  return const Center(
                     child: Text(
                       'No favourite cities yet ❤️', 
                       style: TextStyle(
-                        fontFamily: 'DM Serif Text',
+                        fontFamily: 'SFPro',
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: AppState.textMain
+                        color: Color(0xFF485759)
                       )
                     )
                   );
                 }
 
-                // Логіка пагінації
                 int totalPages = (favorites.length / _itemsPerPage).ceil();
                 if (totalPages == 0) totalPages = 1;
                 if (_currentPage > totalPages) _currentPage = totalPages;
@@ -70,31 +56,33 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
                 return Center(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 40, left: 20, right: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
                     child: Container(
                       constraints: const BoxConstraints(maxWidth: 1100),
-                      padding: const EdgeInsets.all(40),
+                      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 40),
                       decoration: BoxDecoration(
-                        color: Colors.white, 
-                        borderRadius: BorderRadius.circular(24), 
+                        color: const Color(0xFFE2D7C0),
+                        borderRadius: BorderRadius.circular(60),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05), 
-                            blurRadius: 30, 
-                            offset: const Offset(0, 10)
+                            color: Colors.black.withOpacity(0.05), 
+                            blurRadius: 40, 
+                            offset: const Offset(0, 20)
                           )
                         ]
                       ),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Wrap(
-                            spacing: 24, runSpacing: 24,
+                            spacing: 30,
+                            runSpacing: 30,
                             alignment: WrapAlignment.center,
                             children: paginatedFavorites.map((city) => _buildFavoriteCard(city)).toList(),
                           ),
                           
                           if (totalPages > 1) ...[
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 50),
                             _buildPagination(totalPages),
                           ]
                         ],
@@ -110,123 +98,170 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  // Картка міста в обраному
   Widget _buildFavoriteCard(City city) {
     return Container(
       width: 300,
-      padding: const EdgeInsets.all(20),
+      height: 420,
       decoration: BoxDecoration(
-        color: Colors.white, 
-        borderRadius: BorderRadius.circular(16), 
-        border: Border.all(color: const Color(0xFFE0E0E0))
+        borderRadius: BorderRadius.circular(35), 
+        image: city.image.isNotEmpty 
+            ? DecorationImage(image: NetworkImage(city.image), fit: BoxFit.cover)
+            : const DecorationImage(image: AssetImage('assets/placeholder.png'), fit: BoxFit.cover),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Зображення міста
           Container(
-            height: 180, 
             decoration: BoxDecoration(
-              color: const Color(0xFFEBEBEB), 
-              borderRadius: BorderRadius.circular(8),
-              image: city.image.isNotEmpty 
-                ? DecorationImage(image: NetworkImage(city.image), fit: BoxFit.cover) 
-                : null,
-            ), 
-            child: city.image.isEmpty 
-              ? Center(child: Icon(Icons.image_outlined, color: Colors.grey.withValues(alpha: 0.3), size: 64))
-              : null,
-          ),
-          const SizedBox(height: 16),
-          Text(city.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'DM Serif Text')),
-          const SizedBox(height: 4),
-          
-          // Ціна з конвертацією
-          ValueListenableBuilder(
-            valueListenable: AppState.currency,
-            builder: (context, _, __) {
-              int convertedPrice = AppState.convertPrice(city.averagePrice.toInt());
-              String symbol = AppState.getCurrencySymbol();
-              return Text('$symbol$convertedPrice', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1));
-            }
-          ),
-          const SizedBox(height: 4),
-          Text(city.country, style: const TextStyle(color: Colors.grey, fontSize: 14)), 
-          const SizedBox(height: 24),
-          
-          // Кнопки дій
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2D2D2D),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  elevation: 0,
-                ),
-                onPressed: () => Navigator.push(context, PremiumTransition(page: CityDetailsScreen(city: city))),
-                child: const Text('VIEW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
+              borderRadius: BorderRadius.circular(35),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                stops: const [0.4, 1.0],
               ),
-              MouseRegion(
-                cursor: SystemMouseCursors.click, 
-                child: GestureDetector(
-                  onTap: () {
-                    AppState.toggleFavorite(city);
-                    setState(() {}); 
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12), 
-                    decoration: const BoxDecoration(color: Color(0xFF2D2D2D), shape: BoxShape.circle), 
-                    child: const Icon(Icons.favorite, color: Colors.white, size: 18)
-                  )
+            ),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click, 
+                    child: GestureDetector(
+                      onTap: () async {
+                        // ТЕПЕР ПЕРЕДАЄМО CONTEXT
+                        await AppState.toggleFavorite(context, city);
+                        setState(() {}); 
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10), 
+                        decoration: const BoxDecoration(color: Color(0xFFFFFBEB), shape: BoxShape.circle), 
+                        child: const Icon(Icons.favorite, color: Color(0xFFC4B89D), size: 20)
+                      )
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          )
+                
+                const Spacer(),
+                
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // === ВИПРАВЛЕНО ДОВГИЙ ТЕКСТ ===
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          city.name.toUpperCase(), 
+                          maxLines: 1, // Тільки один рядок!
+                          style: const TextStyle(
+                            color: Colors.white, 
+                            fontWeight: FontWeight.bold, 
+                            fontSize: 26, 
+                            fontFamily: 'SFPro'
+                          )
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8), // Невеликий відступ від ціни
+                    ValueListenableBuilder(
+                      valueListenable: AppState.currency,
+                      builder: (context, _, __) {
+                        int convertedPrice = AppState.convertPrice(city.averagePrice.toInt());
+                        String symbol = AppState.getCurrencySymbol();
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text('$symbol$convertedPrice', style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 6.0, left: 2.0),
+                              child: Text('/ mo', style: TextStyle(color: Colors.white, fontSize: 12)),
+                            ),
+                          ],
+                        );
+                      }
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                const Text(
+                  "Body text for your whole article or post. We'll put in some lorem ipsum to show how a filled-out page might look:", 
+                  style: TextStyle(color: Color(0xA6FFFBEB), fontSize: 11, height: 1.4)
+                ), 
+                const SizedBox(height: 20),
+                
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFFBEB),
+                        foregroundColor: const Color(0xFF485759),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        elevation: 0,
+                      ),
+                      onPressed: () => Navigator.push(context, PremiumTransition(page: CityDetailsScreen(city: city))),
+                      child: const Text('VIEW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 1.5)),
+                    ),
+                    
+                    Row(
+                      children: List.generate(5, (index) {
+                        int rating = city.rating.round();
+                        return Icon(index < rating ? Icons.star : Icons.star_border, color: Colors.white, size: 16);
+                      }),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // Блок пагінації
   Widget _buildPagination(int totalPages) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        GestureDetector(
-          onTap: () { if (_currentPage > 1) setState(() => _currentPage--); },
-          child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('← Previous', style: TextStyle(color: _currentPage > 1 ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))),
-        ),
-        const SizedBox(width: 16),
         ...List.generate(totalPages, (index) {
           int pageNum = index + 1;
-          return _buildPageNumber(pageNum, isActive: pageNum == _currentPage);
+          bool isActive = pageNum == _currentPage;
+          
+          return GestureDetector(
+            onTap: () => setState(() => _currentPage = pageNum),
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                width: 32, height: 32,
+                decoration: BoxDecoration(color: isActive ? Colors.white : Colors.transparent, borderRadius: BorderRadius.circular(10)),
+                child: Center(
+                  child: Text(pageNum.toString(), style: TextStyle(color: isActive ? const Color(0xFF485759) : Colors.white, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, fontSize: 14))
+                ),
+              ),
+            ),
+          );
         }),
-        const SizedBox(width: 16),
+        const SizedBox(width: 8),
         GestureDetector(
           onTap: () { if (_currentPage < totalPages) setState(() => _currentPage++); },
-          child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('Next →', style: TextStyle(color: _currentPage < totalPages ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPageNumber(int number, {bool isActive = false}) {
-    return GestureDetector(
-      onTap: () => setState(() => _currentPage = number),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 28, height: 28,
-          decoration: BoxDecoration(color: isActive ? const Color(0xFF2D2D2D) : Colors.transparent, borderRadius: BorderRadius.circular(4)),
-          child: Center(
-            child: Text(number.toString(), style: TextStyle(color: isActive ? Colors.white : Colors.black87, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, fontSize: 12))
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click, 
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Icon(Icons.chevron_right, color: _currentPage < totalPages ? Colors.white : Colors.white.withOpacity(0.3), size: 24),
+            )
           ),
         ),
-      ),
+      ],
     );
   }
 }

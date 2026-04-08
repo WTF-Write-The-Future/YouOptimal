@@ -26,25 +26,28 @@ class CityCardFull extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
+            // ФОНОВЕ ЗОБРАЖЕННЯ
             Positioned.fill(
               child: city.image.isNotEmpty && city.image.length > 10
                 ? Image.network(city.image, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholder())
                 : _buildPlaceholder(),
             ),
             
+            // ТЕМНИЙ ГРАДІЄНТ ЗНИЗУ
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.3), Colors.black.withValues(alpha: 0.8)],
-                    stops: const [0.4, 0.7, 1.0],
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.1), Colors.black.withValues(alpha: 0.85)],
+                    stops: const [0.4, 0.65, 1.0],
                   ),
                 ),
               ),
             ),
 
+            // КНОПКА "В ОБРАНЕ" (Сердечко)
             Positioned(
               top: 16,
               right: 16,
@@ -53,10 +56,10 @@ class CityCardFull extends StatelessWidget {
                 builder: (context, favorites, child) {
                   bool isFav = AppState.isFavorite(city);
                   return GestureDetector(
-                    onTap: () => AppState.toggleFavorite(city),
+                    onTap: () => AppState.toggleFavorite(context, city),
                     child: Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3), shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.25), shape: BoxShape.circle),
                       child: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: Colors.white, size: 22),
                     ),
                   );
@@ -64,8 +67,9 @@ class CityCardFull extends StatelessWidget {
               ),
             ),
 
+            // НИЖНІЙ БЛОК З ТЕКСТОМ (Більш компактний)
             Positioned(
-              left: 24, right: 24, bottom: 24,
+              left: 20, right: 20, bottom: 20,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -73,14 +77,23 @@ class CityCardFull extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      // НАЗВА МІСТА
                       Expanded(
                         child: Text(
                           city.name.toUpperCase(),
-                          style: const TextStyle(fontFamily: 'DM Serif Text', color: Colors.white, fontSize: 24),
+                          style: const TextStyle(
+                            fontFamily: 'SFPro', 
+                            color: Colors.white, 
+                            fontSize: 36, 
+                            fontWeight: FontWeight.w900, 
+                            height: 1.0, // Менша висота рядка для компактності
+                            letterSpacing: 0,
+                          ),
                           maxLines: 1, overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       
+                      // ЦІНА
                       ValueListenableBuilder<String>(
                         valueListenable: AppState.currency,
                         builder: (context, currentCurrency, child) {
@@ -88,11 +101,23 @@ class CityCardFull extends StatelessWidget {
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(AppState.getCurrencySymbol(), style: const TextStyle(fontFamily: 'DM Serif Text', color: Colors.white, fontSize: 16)),
-                              Text(price, style: const TextStyle(fontFamily: 'DM Serif Text', color: Colors.white, fontSize: 32, height: 1.0)),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4.0, right: 2.0),
+                                child: Text(AppState.getCurrencySymbol(), style: const TextStyle(fontFamily: 'SFPro', color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                              ),
+                              Text(
+                                price, 
+                                style: const TextStyle(
+                                  fontFamily: 'SFPro', 
+                                  color: Colors.white, 
+                                  fontSize: 36, 
+                                  fontWeight: FontWeight.w900, 
+                                  height: 1.0 // Компактна висота
+                                )
+                              ),
                               const Padding(
-                                padding: EdgeInsets.only(top: 14.0),
-                                child: Text('/mo', style: TextStyle(fontFamily: 'DM Serif Text', color: Colors.white70, fontSize: 14)),
+                                padding: EdgeInsets.only(top: 18.0, left: 2.0),
+                                child: Text('/mo', style: TextStyle(fontFamily: 'SFPro', color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                               ),
                             ],
                           );
@@ -100,15 +125,23 @@ class CityCardFull extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6), // Зменшено відступ
                   
+                  // ОПИС
                   Text(
-                    'Explore the beautiful city of ${city.name} in ${city.country}.',
-                    style: const TextStyle(fontFamily: 'DM Serif Text', color: Colors.white, fontSize: 14),
-                    maxLines: 2, overflow: TextOverflow.ellipsis,
+                    'Explore the beautiful city of ${city.name} in ${city.country}. We\'ll put in some lorem ipsum to show how a filled-out page might look.',
+                    style: const TextStyle(
+                      fontFamily: 'SFPro', 
+                      color: Colors.white, 
+                      fontSize: 14, 
+                      fontWeight: FontWeight.normal, 
+                      height: 1.3, // Трохи щільніший текст
+                    ),
+                    maxLines: 3, overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16), // Зменшено відступ
                   
+                  // КНОПКА ТА ЗІРКИ
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -116,8 +149,11 @@ class CityCardFull extends StatelessWidget {
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CityDetailsScreen(city: city))),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                          decoration: BoxDecoration(color: const Color(0xFFC1D7D8), borderRadius: BorderRadius.circular(20)),
-                          child: const Text('VIEW', style: TextStyle(fontFamily: 'DM Serif Text', color: Colors.black87)),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7F3E8), 
+                            borderRadius: BorderRadius.circular(20)
+                          ),
+                          child: const Text('VIEW', style: TextStyle(fontFamily: 'SFPro', color: Color(0xFF2B3233), fontWeight: FontWeight.w900)),
                         ),
                       ),
                       _buildStars(city.rating),
@@ -148,14 +184,14 @@ class CityCardFull extends StatelessWidget {
   Widget _buildStars(double rating) {
     int starCount = (city.rating / 20).ceil();
     return Row(
-  mainAxisSize: MainAxisSize.min,
-  children: List.generate(5, (index) {
-    return Icon(
-      index < starCount ? Icons.star : Icons.star_border,
-      color: Colors.orangeAccent, 
-      size: 16,
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < starCount ? Icons.star : Icons.star_border,
+          color: Colors.white, 
+          size: 18,
+        );
+      }),
     );
-  }),
-   );
   }
 }
