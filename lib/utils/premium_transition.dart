@@ -6,18 +6,19 @@ class PremiumTransition extends PageRouteBuilder {
   PremiumTransition({required this.page})
       : super(
           pageBuilder: (context, animation, secondaryAnimation) => page,
-          // Тривалість переходу (400мс - ідеально для плавності)
-          transitionDuration: const Duration(milliseconds: 400), 
+          // Оптимальний час: не надто довго, щоб не дратувало, і не надто швидко
+          transitionDuration: const Duration(milliseconds: 400),
           reverseTransitionDuration: const Duration(milliseconds: 300),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            // Крива анімації (починається швидко, закінчується дуже плавно)
-            const curve = Curves.easeOutQuart;
+            
+            // МАГІЯ 1: Крива анімації (Швидкий старт, плавне гальмування)
+            const curve = Curves.easeOutCubic;
 
-            // Рух знизу вгору на 5% екрану
+            // МАГІЯ 2: Легкий рух знизу вверх (лише на 5% висоти екрану)
             var slideTween = Tween(begin: const Offset(0.0, 0.05), end: Offset.zero)
                 .chain(CurveTween(curve: curve));
 
-            // Проявлення прозорості від 0 до 1
+            // МАГІЯ 3: Плавна поява
             var fadeTween = Tween(begin: 0.0, end: 1.0)
                 .chain(CurveTween(curve: curve));
 

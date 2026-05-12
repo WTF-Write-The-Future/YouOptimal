@@ -165,7 +165,8 @@ class AboutUsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildTechItem('Python', 'https://cdn-icons-png.flaticon.com/512/5968/5968350.png', isNetwork: true),
           const SizedBox(height: 16),
-          _buildTechItem('FastAPI', '', isCustomFastApi: true),
+          // ЗМІНЕНО ТУТ: Замість FastAPI тепер Supabase
+          _buildTechItem('Supabase', '', isSupabase: true),
           const SizedBox(height: 16),
           _buildTechItem('Flutter', '', isFlutter: true),
         ],
@@ -173,10 +174,17 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTechItem(String name, String url, {bool isNetwork = false, bool isCustomFastApi = false, bool isFlutter = false}) {
+  // ЗМІНЕНО ТУТ: Додано параметр isSupabase
+  Widget _buildTechItem(String name, String url, {bool isNetwork = false, bool isSupabase = false, bool isFlutter = false}) {
     Widget icon;
-    if (isCustomFastApi) {
-      icon = Container(width: 26, height: 26, decoration: const BoxDecoration(color: Color(0xFF009688), shape: BoxShape.circle), child: const Icon(Icons.bolt, color: Colors.white, size: 18));
+    if (isSupabase) {
+      // Ідеально симетрична кругла іконка бази даних у фірмовому кольорі Supabase
+      icon = Container(
+        width: 26, 
+        height: 26, 
+        decoration: const BoxDecoration(color: Color(0xFF3ECF8E), shape: BoxShape.circle), 
+        child: const Icon(Icons.storage_rounded, color: Colors.white, size: 14)
+      );
     } else if (isFlutter) {
       icon = const FlutterLogo(size: 26);
     } else {

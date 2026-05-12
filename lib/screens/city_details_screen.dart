@@ -1,18 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
+
 import '../models/city.dart';
+import '../models/review.dart';
 import '../state/app_state.dart';
 import '../widgets/custom_header.dart';
 import '../screens/review_screen.dart';
 
-class CityDetailsScreen extends StatelessWidget {
+class CityDetailsScreen extends StatefulWidget {
   final City city;
 
   const CityDetailsScreen({super.key, required this.city});
 
+  @override
+  State<CityDetailsScreen> createState() => _CityDetailsScreenState();
+}
+
+class _CityDetailsScreenState extends State<CityDetailsScreen> {
   final Color bgScreen = const Color(0xFFF7F3E8);
   final Color bgCard = const Color(0xFFC9BA9B);
   final Color bgChip = const Color(0xFFFFFBEB);
   final Color textDark = const Color(0xFF2B3233);
+
+  // Змінні для відгуків
+  List<Review> _allReviews = [];
+  bool _isLoadingReviews = true;
+  
+  // Пагінація (використовується для ПК)
+  int _currentPage = 1;
+  final int _reviewsPerPage = 2; // По 2 відгуки для балансу
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReviews();
+  }
+
+  Future<void> _fetchReviews() async {
+    setState(() => _isLoadingReviews = true);
+    
+    try {
+      final response = await Supabase.instance.client
+          .from('review')
+          .select()
+          .eq('city_id', widget.city.id)
+          .order('created_at', ascending: false);
+
+      setState(() {
+        _allReviews = response.map((json) => Review.fromJson(json)).toList();
+        _isLoadingReviews = false;
+        _currentPage = 1; 
+      });
+    } catch (e) {
+      print('Помилка завантаження відгуків: $e');
+      setState(() => _isLoadingReviews = false);
+    }
+  }
+
+  int get _totalPages => _allReviews.isEmpty ? 1 : (_allReviews.length / _reviewsPerPage).ceil();
+
+  List<Review> get _currentReviews {
+    int start = (_currentPage - 1) * _reviewsPerPage;
+    int end = start + _reviewsPerPage;
+    if (end > _allReviews.length) end = _allReviews.length;
+    return _allReviews.sublist(start, end);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,41 +75,323 @@ class CityDetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: bgScreen,
       appBar: const MainAppHeader(showFavourite: false),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 40.0, vertical: 40.0),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 1200),
+      // ЖОРСТКЕ РОЗДІЛЕННЯ ЛОГІКИ: Мобілка - нове, ПК - старе
+      body: isMobile ? _buildPremiumMobileLayout() : _buildDesktopLayout(context),
+    );
+  }
+
+  Widget _buildPremiumMobileLayout() {
+    double overallAvg = 0;
+    if (_allReviews.isNotEmpty) {
+      overallAvg = _allReviews.map((r) => r.averageRating).reduce((a, b) => a + b) / _allReviews.length;
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      child: Column(
+        children: [
+          // ВЕРХНЯ КАРТКА МІСТА
+          Container(
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: bgCard,
+              color: const Color(0xFFE8E0CE), 
               borderRadius: BorderRadius.circular(40),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, 15))
-              ],
             ),
-            child: isMobile
-                ? Column(
-                    children: [
-                      Padding(padding: const EdgeInsets.all(24), child: _buildLeftSection(context, isMobile)),
-                      _buildRightSection(context, isMobile),
-                    ],
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 6,
-                        child: Padding(
-                          padding: const EdgeInsets.all(40),
-                          child: _buildLeftSection(context, isMobile),
+            child: Column(
+              children: [
+                // ЗМІНЕНО: Вирівнювання по центру (center), щоб текст і фото виглядали симетрично
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // КАРТИНКА (Ідеальний розмір 140x140)
+                   // КАРТИНКА (Ідеальний розмір 140x140)
+                    Hero(
+                      tag: 'hero-city-image-${widget.city.id}',
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(28),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 10, offset: const Offset(0, 5))],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: widget.city.image.isNotEmpty
+                                ? Image.network(widget.city.image, fit: BoxFit.cover)
+                                : Container(color: Colors.grey.shade300, child: const Icon(Icons.image, color: Colors.grey)),
+                          ),
                         ),
                       ),
-                      Expanded(
-                        flex: 4,
-                        child: _buildRightSection(context, isMobile),
+                    ),
+                    const SizedBox(width: 20),
+                    // НАЗВА, ЦІНА ТА ІКОНКИ
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Блок з іконками Visited та Favorite
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              _buildMobileVisitedButton(),
+                              const SizedBox(width: 8),
+                              _buildMobileLikeButton(),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Назва міста з FittedBox
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              widget.city.name.toUpperCase(),
+                              style: TextStyle(fontFamily: 'SFPro', fontSize: 28, fontWeight: FontWeight.w900, color: textDark, height: 1.1),
+                              maxLines: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Ціна
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(AppState.getCurrencySymbol(), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textDark.withOpacity(0.5))),
+                              Text(
+                                AppState.convertPrice(widget.city.averagePrice.toInt()).toString(),
+                                style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: textDark, height: 1.0)
+                              ),
+                            ],
+                          ),
+                          Text('/ mo', style: TextStyle(fontSize: 14, color: textDark.withOpacity(0.5), fontWeight: FontWeight.bold)),
+                        ],
                       ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                
+                // МЕТРИКИ (ВСІ ДАНІ З БАЗИ)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    if (widget.city.temperature != null) _buildMobileMetricChip(Icons.thermostat, '${widget.city.temperature!.toInt()}°C'),
+                    if (widget.city.airQualityIndex != null) _buildMobileMetricChip(Icons.air, 'Air: ${widget.city.airQualityIndex!.toInt()}'),
+                    if (widget.city.atmosphericPressure != null) _buildMobileMetricChip(Icons.compress, '${widget.city.atmosphericPressure!.toInt()} hPa'),
+                    if (widget.city.rent1Room != null) _buildMobileMetricChip(Icons.apartment, '1-bed: ${AppState.getCurrencySymbol()}${widget.city.rent1Room!.toInt()}'),
+                    if (widget.city.rent2Room != null) _buildMobileMetricChip(Icons.grid_view_rounded, '2-bed: ${AppState.getCurrencySymbol()}${widget.city.rent2Room!.toInt()}'),
+                    if (widget.city.rent3Room != null) _buildMobileMetricChip(Icons.home_work_outlined, '3-bed: ${AppState.getCurrencySymbol()}${widget.city.rent3Room!.toInt()}'),
+                    if (widget.city.rentHouse != null) _buildMobileMetricChip(Icons.home_outlined, 'House: ${AppState.getCurrencySymbol()}${widget.city.rentHouse!.toInt()}'),
+                    if (widget.city.taxiPrice != null) _buildMobileMetricChip(Icons.local_taxi, 'Taxi: ${AppState.getCurrencySymbol()}${widget.city.taxiPrice}'),
+                    if (widget.city.publicTransportPrice != null) _buildMobileMetricChip(Icons.directions_bus, 'Bus: ${AppState.getCurrencySymbol()}${widget.city.publicTransportPrice}'),
+                    if (widget.city.internetSpeed != null) _buildMobileMetricChip(Icons.wifi, '${widget.city.internetSpeed!.toInt()} Mbps'),
+                    if (widget.city.safetyIndex != null) _buildMobileMetricChip(Icons.security, 'Safety: ${widget.city.safetyIndex!.toInt()}/100'),
+                    _buildMobileMetricChip(Icons.public, widget.city.country),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                
+                // ABOUT БЛОК
+                _ExpandableAboutSection(
+                  cityName: widget.city.name,
+                  description: '${widget.city.name} is a breathtaking city, famous for its stunning architecture and vibrant energy. It perfectly blends a rich historical past with modern lifestyle, making it one of the most atmospheric places to live.',
+                  bgScreen: Colors.white.withOpacity(0.6),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // ВІДГУКИ КАРТКА
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('REVIEWS', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.w900, fontSize: 18, color: textDark, letterSpacing: 1.2)),
+                ),
+                const SizedBox(height: 16),
+                
+                // БЛОК СЕРЕДНЬОГО РЕЙТИНГУ
+                if (!_isLoadingReviews && _allReviews.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16), 
+                    padding: const EdgeInsets.all(16), 
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Overall Rating', style: TextStyle(fontFamily: 'SFPro', fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                            const SizedBox(height: 4),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(overallAvg.toStringAsFixed(1), style: TextStyle(fontFamily: 'SFPro', fontSize: 28, fontWeight: FontWeight.w900, color: textDark, height: 1.0)),
+                                const SizedBox(width: 4),
+                                const Text('/ 5.0', style: TextStyle(fontFamily: 'SFPro', fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              children: List.generate(5, (index) => Icon(
+                                index < overallAvg.round() ? Icons.star : Icons.star_border,
+                                color: bgCard,
+                                size: 18,
+                              )),
+                            ),
+                            const SizedBox(height: 6),
+                            Text('${_allReviews.length} Reviews', style: const TextStyle(fontFamily: 'SFPro', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                if (_isLoadingReviews) 
+                  const Center(child: CircularProgressIndicator())
+                else if (_allReviews.isEmpty)
+                   const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Text('No reviews yet. Be the first!'))
+                else
+                  ..._allReviews.map((r) => _ReviewCard(review: r, bgCard: bgCard, bgScreen: const Color(0xFFE8E0CE), textDark: textDark)),
+                
+                const SizedBox(height: 20),
+                
+                // КНОПКА LEAVE A REVIEW
+                ElevatedButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ReviewScreen(city: widget.city))).then((_) => _fetchReviews()),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: textDark,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text('LEAVE A REVIEW', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1.0)),
+                      SizedBox(width: 8),
+                      Icon(Icons.edit_outlined, size: 16),
                     ],
                   ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileMetricChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: textDark),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: textDark)),
+        ],
+      ),
+    );
+  }
+
+  // === НОВА КНОПКА VISITED ===
+  Widget _buildMobileVisitedButton() {
+    return ValueListenableBuilder<List<City>>(
+      valueListenable: AppState.visitedCities,
+      builder: (context, visitedList, _) {
+        bool isVisited = visitedList.any((c) => c.id == widget.city.id);
+        return GestureDetector(
+          onTap: () => AppState.toggleVisited(context, widget.city),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: Icon(
+              Icons.check_circle_rounded, 
+              color: isVisited ? const Color(0xFF53D769) : Colors.grey.shade300, 
+              size: 20
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // === ІСНУЮЧА КНОПКА LIKE ===
+  Widget _buildMobileLikeButton() {
+    return ValueListenableBuilder(
+      valueListenable: AppState.favorites,
+      builder: (context, _, __) {
+        bool isFav = AppState.isFavorite(widget.city);
+        return GestureDetector(
+          onTap: () => AppState.toggleFavorite(context, widget.city),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: bgCard, size: 20),
+          ),
+        );
+      },
+    );
+  }
+
+  // ================================================================
+  // ============== СТАРА ІДЕАЛЬНА ПК ВЕРСІЯ ========================
+  // ================================================================
+  // ЖОДЕН РЯДОК НИЖЧЕ НЕ ЗМІНЕНИЙ
+  
+  Widget _buildDesktopLayout(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 40.0),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          decoration: BoxDecoration(
+            color: bgCard,
+            borderRadius: BorderRadius.circular(40),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 30, offset: const Offset(0, 15))
+            ],
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch, 
+              children: [
+                Expanded(
+                  flex: 6,
+                  child: Padding(
+                    padding: const EdgeInsets.all(32), 
+                    child: _buildLeftSection(context, false),
+                  ),
+                ),
+                Expanded(
+                  flex: 4,
+                  child: _buildRightSection(context, false),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -66,7 +401,7 @@ class CityDetailsScreen extends StatelessWidget {
   Widget _buildLeftSection(BuildContext context, bool isMobile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.start, 
       children: [
         isMobile
             ? Column(
@@ -97,11 +432,11 @@ class CityDetailsScreen extends StatelessWidget {
                 ],
               ),
         
-        SizedBox(height: isMobile ? 32 : 40),
+        SizedBox(height: isMobile ? 24 : 32),
         
         _ExpandableAboutSection(
-          cityName: city.name,
-          description: '${city.name} is a breathtaking city, famous for its stunning architecture and vibrant energy. It perfectly blends a rich historical past with modern lifestyle, making it one of the most atmospheric places to live.',
+          cityName: widget.city.name,
+          description: '${widget.city.name} is a breathtaking city, famous for its stunning architecture and vibrant energy. It perfectly blends a rich historical past with modern lifestyle, making it one of the most atmospheric places to live.',
           bgScreen: bgScreen,
         ),
       ],
@@ -109,66 +444,190 @@ class CityDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildRightSection(BuildContext context, bool isMobile) {
+    double overallAvg = 0;
+    if (_allReviews.isNotEmpty) {
+      overallAvg = _allReviews.map((r) => r.averageRating).reduce((a, b) => a + b) / _allReviews.length;
+    }
+
     return Container(
       margin: EdgeInsets.only(
-        top: isMobile ? 0 : 20, 
-        bottom: isMobile ? 0 : 20, 
-        right: isMobile ? 0 : 20
+        top: isMobile ? 0 : 16, 
+        bottom: isMobile ? 0 : 16, 
+        right: isMobile ? 0 : 16
       ),
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20), 
       decoration: BoxDecoration(
         color: bgScreen,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(isMobile ? 0 : 32),
-          topRight: Radius.circular(isMobile ? 40 : 32),
-          bottomLeft: Radius.circular(isMobile ? 40 : 32),
-          bottomRight: Radius.circular(isMobile ? 40 : 32),
+          topRight: Radius.circular(isMobile ? 32 : 32),
+          bottomLeft: Radius.circular(isMobile ? 32 : 32),
+          bottomRight: Radius.circular(isMobile ? 32 : 32),
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, 
         children: [
+          // === ВЕРХНЯ ЧАСТИНА ===
           Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildMockReviewCard(),
-              const SizedBox(height: 16),
-              _buildMockReviewCard(),
-              const SizedBox(height: 16),
-              _buildMockReviewCard(),
+              // Блок із загальною статистикою
+              if (!_isLoadingReviews && _allReviews.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12), 
+                  padding: const EdgeInsets.all(12), 
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Overall Rating', style: TextStyle(fontFamily: 'SFPro', fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                          const SizedBox(height: 2),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(overallAvg.toStringAsFixed(1), style: TextStyle(fontFamily: 'SFPro', fontSize: 24, fontWeight: FontWeight.w900, color: textDark, height: 1.0)),
+                              const SizedBox(width: 4),
+                              const Text('/ 5.0', style: TextStyle(fontFamily: 'SFPro', fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            children: List.generate(5, (index) => Icon(
+                              index < overallAvg.round() ? Icons.star : Icons.star_border,
+                              color: bgCard,
+                              size: 16,
+                            )),
+                          ),
+                          const SizedBox(height: 4),
+                          Text('${_allReviews.length} Reviews', style: const TextStyle(fontFamily: 'SFPro', fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Список відгуків
+              if (_isLoadingReviews)
+                const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(color: Color(0xFFC9BA9B)),
+                ),
+              
+              if (!_isLoadingReviews && _allReviews.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20.0),
+                  child: Center(
+                    child: Text(
+                      'No reviews yet. Be the first!',
+                      style: TextStyle(fontFamily: 'SFPro', fontSize: 14, color: Colors.grey.shade600),
+                    ),
+                  ),
+                ),
+
+              if (!_isLoadingReviews && _allReviews.isNotEmpty)
+                ..._currentReviews.map((review) => _ReviewCard(
+                      review: review,
+                      bgCard: bgCard,
+                      bgScreen: bgScreen,
+                      textDark: textDark,
+                    )),
             ],
           ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ReviewScreen(city: city)));
-            },
-            icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.black87),
-            label: const Text('LEAVE A REVIEW', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Colors.black87)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-              elevation: 2,
-              shadowColor: Colors.black.withValues(alpha: 0.1),
-            ),
+          
+          // === НИЖНЯ ЧАСТИНА ===
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Пагінація
+              if (_totalPages > 1)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0), 
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        iconSize: 20,
+                        icon: const Icon(Icons.chevron_left),
+                        color: _currentPage > 1 ? textDark : Colors.grey.shade400,
+                        onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                      ),
+                      Text(
+                        'Page $_currentPage of $_totalPages',
+                        style: TextStyle(fontFamily: 'SFPro', fontSize: 12, fontWeight: FontWeight.bold, color: textDark),
+                      ),
+                      IconButton(
+                        iconSize: 20,
+                        icon: const Icon(Icons.chevron_right),
+                        color: _currentPage < _totalPages ? textDark : Colors.grey.shade400,
+                        onPressed: _currentPage < _totalPages ? () => setState(() => _currentPage++) : null,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                const SizedBox(height: 8),
+              
+              // Кнопка LEAVE A REVIEW
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => ReviewScreen(city: widget.city))
+                  ).then((_) => _fetchReviews());
+                },
+                icon: const Icon(Icons.edit_outlined, size: 14, color: Colors.black87),
+                label: const Text('LEAVE A REVIEW', style: TextStyle(fontFamily: 'SFPro', fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.0, color: Colors.black87)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  elevation: 1,
+                  shadowColor: Colors.black.withOpacity(0.1),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildImage(bool isMobile) {
-    return Container(
-      width: isMobile ? double.infinity : 260, 
-      height: 360, 
-      decoration: BoxDecoration(
-        color: bgScreen,
-        borderRadius: BorderRadius.circular(32),
-        image: city.image.isNotEmpty ? DecorationImage(image: NetworkImage(city.image), fit: BoxFit.cover) : null,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 20, offset: const Offset(0, 10))
-        ],
+ Widget _buildImage(bool isMobile) {
+    return Hero(
+      tag: 'hero-city-image-${widget.city.id}', 
+      child: Material(
+        type: MaterialType.transparency,
+        child: Container(
+          width: isMobile ? double.infinity : 260, 
+          height: 360, 
+          decoration: BoxDecoration(
+            color: bgScreen,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 20, offset: const Offset(0, 10))
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: widget.city.image.isNotEmpty 
+                ? Image.network(widget.city.image, fit: BoxFit.cover) 
+                : const Center(child: Icon(Icons.image, size: 64, color: Colors.grey)),
+          ),
+        ),
       ),
-      child: city.image.isEmpty ? const Center(child: Icon(Icons.image, size: 64, color: Colors.grey)) : null,
     );
   }
 
@@ -181,18 +640,18 @@ class CityDetailsScreen extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                city.name.toUpperCase(), 
+                widget.city.name.toUpperCase(), 
                 style: const TextStyle(fontFamily: 'SFPro', fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white, height: 1.1),
               ),
             ),
             ValueListenableBuilder<List<City>>(
               valueListenable: AppState.favorites,
               builder: (context, favorites, child) {
-                bool isFav = AppState.isFavorite(city);
+                bool isFav = AppState.isFavorite(widget.city);
                 return MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
-                    onTap: () => AppState.toggleFavorite(context, city),
+                    onTap: () => AppState.toggleFavorite(context, widget.city),
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
@@ -208,7 +667,7 @@ class CityDetailsScreen extends StatelessWidget {
         ValueListenableBuilder<String>(
           valueListenable: AppState.currency,
           builder: (context, currentCurrency, child) {
-            String price = AppState.convertPrice(city.averagePrice.toInt()).toString();
+            String price = AppState.convertPrice(widget.city.averagePrice.toInt()).toString();
             return Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -219,7 +678,7 @@ class CityDetailsScreen extends StatelessWidget {
                 Text(price, style: const TextStyle(fontFamily: 'SFPro', fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)),
                 const Padding(
                   padding: EdgeInsets.only(bottom: 6.0, left: 4.0),
-                  child: Text('/ mo', style: TextStyle(fontFamily: 'SFPro', fontSize: 16, color: Colors.white70, fontWeight: FontWeight.bold)),
+                  child: Text('/ mo', style: const TextStyle(fontFamily: 'SFPro', fontSize: 16, color: Colors.white70, fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -238,22 +697,21 @@ class CityDetailsScreen extends StatelessWidget {
           valueListenable: AppState.tempUnit, 
           builder: (context, _, __) {
             String tempText = 'Temp: N/A';
-            if (city.temperature != null) {
-              tempText = AppState.getFormattedTemperature(city.temperature!.toDouble());
+            if (widget.city.temperature != null) {
+              tempText = AppState.getFormattedTemperature(widget.city.temperature!.toDouble());
             }
             return _buildMetricChip(Icons.wb_sunny_outlined, tempText);
           }
         ),
-        _buildMetricChip(Icons.air, city.airQualityIndex != null ? 'AQI: ${city.airQualityIndex}' : 'AQI: N/A'),
-        _buildMetricChip(Icons.wifi, city.internetSpeed != null ? '${city.internetSpeed} Mbps' : 'Net: N/A'),
-        _buildMetricChip(Icons.security, city.safetyIndex != null ? 'Safety: ${city.safetyIndex}/10' : 'Safety: N/A'),
-        _buildMetricChip(Icons.compress, city.atmosphericPressure != null ? '${city.atmosphericPressure} hPa' : 'Press: N/A'),
-        _buildMetricChip(Icons.bed_outlined, city.rent1Room != null ? '1-bed: \$${city.rent1Room}' : '1-bed: N/A'),
-        _buildMetricChip(Icons.bed, city.rent2Room != null ? '2-bed: \$${city.rent2Room}' : '2-bed: N/A'),
-        _buildMetricChip(Icons.bedroom_parent_outlined, city.rent3Room != null ? '3-bed: \$${city.rent3Room}' : '3-bed: N/A'),
-        _buildMetricChip(Icons.house_outlined, city.rentHouse != null ? 'House: \$${city.rentHouse}' : 'House: N/A'),
-        _buildMetricChip(Icons.local_taxi_outlined, city.taxiPrice != null ? 'Taxi: \$${city.taxiPrice}' : 'Taxi: N/A'),
-        _buildMetricChip(Icons.directions_bus_outlined, city.publicTransportPrice != null ? 'Transit: \$${city.publicTransportPrice}' : 'Transit: N/A'),
+        _buildMetricChip(Icons.air, widget.city.airQualityIndex != null ? 'AQI: ${widget.city.airQualityIndex}' : 'AQI: N/A'),
+        _buildMetricChip(Icons.wifi, widget.city.internetSpeed != null ? '${widget.city.internetSpeed} Mbps' : 'Net: N/A'),
+        _buildMetricChip(Icons.security, widget.city.safetyIndex != null ? 'Safety: ${widget.city.safetyIndex}/10' : 'Safety: N/A'),
+        _buildMetricChip(Icons.compress, widget.city.atmosphericPressure != null ? '${widget.city.atmosphericPressure} hPa' : 'Press: N/A'),
+        _buildMetricChip(Icons.bed_outlined, widget.city.rent1Room != null ? '1-bed: \$${widget.city.rent1Room}' : '1-bed: N/A'),
+        _buildMetricChip(Icons.bed, widget.city.rent2Room != null ? '2-bed: \$${widget.city.rent2Room}' : '2-bed: N/A'),
+        _buildMetricChip(Icons.bedroom_parent_outlined, widget.city.rent3Room != null ? '3-bed: \$${widget.city.rent3Room}' : '3-bed: N/A'),
+        _buildMetricChip(Icons.house_outlined, widget.city.rentHouse != null ? 'House: \$${widget.city.rentHouse}' : 'House: N/A'),
+        _buildMetricChip(Icons.local_taxi_outlined, widget.city.taxiPrice != null ? 'Taxi: \$${widget.city.taxiPrice}' : 'Taxi: N/A'),
       ],
     );
   }
@@ -266,8 +724,8 @@ class CityDetailsScreen extends StatelessWidget {
         color: bgChip,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
-          BoxShadow(color: Colors.white.withValues(alpha: 0.8), blurRadius: 4, offset: const Offset(-2, -2)),
-          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(2, 2)),
+          BoxShadow(color: Colors.white.withOpacity(0.8), blurRadius: 4, offset: const Offset(-2, -2)),
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(2, 2)),
         ],
       ),
       child: Row(
@@ -280,39 +738,148 @@ class CityDetailsScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildMockReviewCard() {
+// === СПІЛЬНИЙ ВІДЖЕТ: ІНТЕРАКТИВНА КАРТКА ВІДГУКУ ===
+class _ReviewCard extends StatefulWidget {
+  final Review review;
+  final Color bgCard;
+  final Color bgScreen;
+  final Color textDark;
+
+  const _ReviewCard({
+    required this.review,
+    required this.bgCard,
+    required this.bgScreen,
+    required this.textDark,
+  });
+
+  @override
+  State<_ReviewCard> createState() => _ReviewCardState();
+}
+
+class _ReviewCardState extends State<_ReviewCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    String formattedDate = DateFormat('dd MMM yyyy').format(widget.review.createdAt);
+    
+    // Перевірка чи текст достатньо довгий, щоб його згортати
+    bool isLongText = widget.review.text.length > 100;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: List.generate(5, (index) => const Icon(Icons.star, color: Color(0xFFC9BA9B), size: 16))),
-          const SizedBox(height: 8),
-          const Text('Review title', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          const Text('Review body goes here. It was an amazing experience visiting this beautiful city.', style: TextStyle(fontFamily: 'SFPro', fontSize: 12, color: Colors.grey)),
-          const SizedBox(height: 16),
+          Row(
+            children: List.generate(5, (index) {
+              return Icon(
+                index < widget.review.averageRating.round() ? Icons.star : Icons.star_border,
+                color: widget.bgCard,
+                size: 14,
+              );
+            }),
+          ),
+          const SizedBox(height: 6),
+          
+          // ІНТЕРАКТИВНИЙ ТЕКСТ З КНОПКОЮ READ MORE
+          GestureDetector(
+            onTap: () {
+              if (isLongText) {
+                setState(() => _isExpanded = !_isExpanded);
+              }
+            },
+            child: MouseRegion(
+              cursor: isLongText ? SystemMouseCursors.click : SystemMouseCursors.basic,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.review.text,
+                    style: const TextStyle(fontFamily: 'SFPro', fontSize: 12, color: Colors.black87, height: 1.3),
+                    maxLines: _isExpanded ? null : 3, // Якщо розгорнуто - показує все
+                    overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                  ),
+                  if (isLongText)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        _isExpanded ? 'Show less' : 'Read more...',
+                        style: TextStyle(
+                          fontFamily: 'SFPro', 
+                          fontSize: 11, 
+                          fontWeight: FontWeight.bold, 
+                          color: widget.bgCard
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 10),
+          
+          // Детальні оцінки
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: widget.bgScreen, 
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildMiniRating('Safety', widget.review.safetyRating),
+                _buildMiniRating('Architecture', widget.review.architectureRating),
+                _buildMiniRating('Culture', widget.review.cultureRating),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Інфо про автора
           Row(
             children: [
-              const CircleAvatar(radius: 12, backgroundColor: Colors.grey, child: Icon(Icons.person, size: 16, color: Colors.white)),
+              const CircleAvatar(radius: 12, backgroundColor: Colors.grey, child: Icon(Icons.person, size: 14, color: Colors.white)),
               const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Reviewer name', style: TextStyle(fontFamily: 'SFPro', fontSize: 11, fontWeight: FontWeight.bold)),
-                  Text('Date', style: TextStyle(fontFamily: 'SFPro', fontSize: 10, color: Colors.grey)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.review.authorName, style: const TextStyle(fontFamily: 'SFPro', fontSize: 11, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                    Text(formattedDate, style: const TextStyle(fontFamily: 'SFPro', fontSize: 10, color: Colors.grey)),
+                  ],
+                ),
               )
             ],
           )
         ],
       ),
+    );
+  }
+
+  Widget _buildMiniRating(String label, int rating) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontFamily: 'SFPro', fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey)),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            Text(rating.toString(), style: TextStyle(fontFamily: 'SFPro', fontSize: 12, fontWeight: FontWeight.w900, color: widget.textDark)),
+            const SizedBox(width: 2),
+            Icon(Icons.star, size: 10, color: widget.bgCard),
+          ],
+        )
+      ],
     );
   }
 }

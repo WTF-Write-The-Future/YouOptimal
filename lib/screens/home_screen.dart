@@ -4,6 +4,7 @@ import '../widgets/city_card.dart';
 import '../widgets/custom_header.dart'; 
 import '../models/city.dart';
 import '../state/app_state.dart';
+import '../widgets/city_card_mobile.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,11 +58,30 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       _applyFiltersAndSort();
       
-      await AppState.syncFavorites(); 
+      await AppState.syncFavorites();
+      await AppState.syncReviewCount();
+      AppState.syncVisitedCities(); 
       await AppState.syncPreferences();
 
     } catch (e) {
       setState(() => _isLoading = false);
+      
+      if (mounted) {
+        final errorMessage = e.toString().replaceAll('Exception: ', '');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              errorMessage, 
+              style: const TextStyle(fontFamily: 'SFPro', fontSize: 16, fontWeight: FontWeight.w500)
+            ),
+            backgroundColor: Colors.redAccent, 
+            behavior: SnackBarBehavior.floating, 
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
     }
   }
 
@@ -121,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // === ПОВЕРНУТІ ФУНКЦІЇ ДІАЛОГІВ ТА ФІЛЬТРІВ ===
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -262,7 +281,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // === ПОВЕРНЕННЯ ДО ОСНОВНОГО КОДУ ===
   Widget _buildNoResults() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 80.0),
@@ -330,129 +348,160 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: bgColor,
       appBar: const MainAppHeader(showFavourite: true),
-      body: SingleChildScrollView(
+      body: CustomScrollView(
         controller: _scrollController,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
+        slivers: [
+          // 1. Хедер 
+          SliverToBoxAdapter(
+            child: Container(
               width: double.infinity,
-              height: isMobile ? 250 : 350,
+              height: isMobile ? 180 : 350, 
               decoration: const BoxDecoration(
                 color: Colors.grey, 
-                image: DecorationImage(image: AssetImage('assets/header_bg.png'), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken)),
+                image: DecorationImage(
+                  image: AssetImage('assets/header_bg.png'), 
+                  fit: BoxFit.cover, 
+                  colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken)
+                ),
               ),
               child: Align(
                 alignment: Alignment.bottomRight,
                 child: Padding(
-                  padding: EdgeInsets.only(right: isMobile ? 20 : 60, bottom: isMobile ? 20 : 40),
-                  child: Text('Discover your city.', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold, fontSize: isMobile ? 40 : 80, color: const Color(0xA6F5F5F5))),
+                  padding: EdgeInsets.only(right: isMobile ? 20 : 60, bottom: isMobile ? 15 : 40),
+                  child: Text(
+                    'Discover your city.', 
+                    style: TextStyle(
+                      fontFamily: 'SFPro', 
+                      fontWeight: FontWeight.bold, 
+                      fontSize: isMobile ? 32 : 80, 
+                      color: const Color(0xA6F5F5F5)
+                    )
+                  ),
                 ),
               ),
             ),
+          ),
 
-            const SizedBox(height: 40),
-
-            Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 900),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+          // 2. Пошук
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(top: isMobile ? 20 : 40), 
+              child: Center(
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(40),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (val) { _searchQuery = val; _applyFiltersAndSort(); },
-                    style: const TextStyle(fontFamily: 'SFPro'),
-                    decoration: const InputDecoration(
-                      hintText: 'Search',
-                      hintStyle: TextStyle(fontFamily: 'SFPro', color: Colors.grey),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey),
-                      contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-                      border: InputBorder.none,
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(40),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (val) { _searchQuery = val; _applyFiltersAndSort(); },
+                      decoration: InputDecoration(
+                        hintText: 'Search',
+                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: isMobile ? 15 : 20, 
+                          horizontal: 24
+                        ),
+                        border: InputBorder.none,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
+          ),
 
-            const SizedBox(height: 60),
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 80.0),
+          // 3. Заголовок "For you", кнопки (НАД лінією) та сама лінія
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                isMobile ? 16.0 : 80.0, 
+                isMobile ? 30 : 60, 
+                isMobile ? 16.0 : 80.0, 
+                0
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('For you', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold, fontSize: 36, color: Color(0xFF485759))),
-                  const SizedBox(height: 8),
-                  const Divider(color: Color(0xFFDCD5C6), thickness: 1),
-                  const SizedBox(height: 16),
-                  
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      GestureDetector(
-                        onTap: _showFilterDialog, // <--- ТЕПЕР ФУНКЦІЯ Є І ПРАЦЮЄ
-                        child: _buildFilterButton('Filter', Icons.filter_alt_outlined),
+                      Text(
+                        'For you', 
+                        style: TextStyle(
+                          fontFamily: 'SFPro', 
+                          fontWeight: FontWeight.bold, 
+                          fontSize: isMobile ? 28 : 36, 
+                          color: const Color(0xFF485759)
+                        )
                       ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: _showSortDialog, // <--- ТЕПЕР ФУНКЦІЯ Є І ПРАЦЮЄ
-                        child: _buildFilterButton(_currentSort == 'Default' ? 'Sort by' : 'Sorted', Icons.sort),
+                      // Використовуємо нові анімовані кнопки
+                      Row(
+                        children: [
+                          AnimatedHoverButton(
+                            text: 'Filter',
+                            icon: Icons.filter_alt_outlined,
+                            onTap: _showFilterDialog,
+                          ),
+                          const SizedBox(width: 12),
+                          AnimatedHoverButton(
+                            text: _currentSort == 'Default' ? 'Sort by' : 'Sorted',
+                            icon: Icons.sort,
+                            onTap: _showSortDialog,
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 12), // Відступ від кнопок до лінії
+                  const Divider(color: Color(0xFFDCD5C6), thickness: 1),
+                  const SizedBox(height: 24), // Відступ від лінії до карток міст (робимо їх близько)
                 ],
               ),
             ),
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 80.0),
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF485759)))
-                  : paginatedCities.isEmpty
-                      ? _buildNoResults()
-                      : GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: paginatedCities.length,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: isMobile ? 1 : 3,
-                            crossAxisSpacing: isMobile ? 20 : 40,
-                            mainAxisSpacing: isMobile ? 20 : 40,
-                            childAspectRatio: isMobile ? 0.9 : 0.85,
-                          ),
-                          itemBuilder: (context, index) {
-                            return CityCardFull(city: paginatedCities[index], isMobile: isMobile);
-                          },
+          ),
+          
+          // 4. САМ СПИСОК МІСТ
+          _isLoading
+              ? const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator(color: Color(0xFF485759))))
+              : paginatedCities.isEmpty
+                  ? SliverToBoxAdapter(child: _buildNoResults())
+                  : SliverPadding(
+                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 80.0),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isMobile ? 1 : 3,
+                          crossAxisSpacing: isMobile ? 0 : 40,
+                          mainAxisSpacing: isMobile ? 24 : 40,
+                          childAspectRatio: isMobile ? 1.5 : 0.85,
                         ),
-            ),
-            
-            if (!_isLoading && totalPages > 1) ...[
-              const SizedBox(height: 60),
-              _buildSmartPagination(totalPages),
-            ],
-            const SizedBox(height: 80),
-          ],
-        ),
-      ),
-    );
-  }
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final city = paginatedCities[index];
+                            return isMobile 
+                                ? CityCardMobile(city: city) 
+                                : CityCardFull(city: city, isMobile: isMobile);
+                          },
+                          childCount: paginatedCities.length,
+                        ),
+                      ),
+                    ),
 
-  Widget _buildFilterButton(String text, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(color: const Color(0xFFEBE6D9), borderRadius: BorderRadius.circular(30)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: Colors.black87),
-          const SizedBox(width: 8),
-          Text(text, style: const TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black87)),
+          // 5. Пагінація та футер
+          if (!_isLoading && totalPages > 1)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 60),
+                child: _buildSmartPagination(totalPages),
+              ),
+            ),
+          
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
         ],
       ),
     );
@@ -585,6 +634,78 @@ class _HomeScreenState extends State<HomeScreen> {
         width: 36, height: 36,
         decoration: BoxDecoration(color: isActive ? const Color(0xFFC1D7D8) : Colors.transparent, borderRadius: BorderRadius.circular(18)),
         child: Center(child: Text(number.toString(), style: TextStyle(fontFamily: 'SFPro', fontWeight: isActive ? FontWeight.bold : FontWeight.normal, fontSize: 16, color: isActive ? Colors.black87 : Colors.grey))),
+      ),
+    );
+  }
+}
+
+// === НОВИЙ ВІДЖЕТ АНІМОВАНОЇ КНОПКИ З ХОВЕРОМ ===
+class AnimatedHoverButton extends StatefulWidget {
+  final String text;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const AnimatedHoverButton({
+    super.key,
+    required this.text,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  State<AnimatedHoverButton> createState() => _AnimatedHoverButtonState();
+}
+
+class _AnimatedHoverButtonState extends State<AnimatedHoverButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            // Колір трохи темнішає при наведенні
+            color: _isHovered ? const Color(0xFFDED8C9) : const Color(0xFFEBE6D9),
+            borderRadius: BorderRadius.circular(30),
+            // З'являється м'яка тінь
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                : [],
+          ),
+          // Кнопка дуже плавно і ледь-ледь збільшується
+          transform: Matrix4.identity()..scale(_isHovered ? 1.03 : 1.0),
+          transformAlignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 18, color: Colors.black87),
+              const SizedBox(width: 8),
+              Text(
+                widget.text,
+                style: const TextStyle(
+                  fontFamily: 'SFPro',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

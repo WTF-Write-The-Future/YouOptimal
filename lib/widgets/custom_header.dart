@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../screens/home_screen.dart';
+import '../screens/my_reviews_screen.dart';
 import '../screens/auth_screen.dart';
 import '../screens/favorites_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/about_us_screen.dart';
-import '../state/app_state.dart'; // ДОДАНО: Імпорт AppState для очищення лайків
+import '../state/app_state.dart';
+import '../utils/custom_snackbar.dart';
+import '../utils/premium_transition.dart';
+import '../screens/visited_cities_screen.dart';
 
 class MainAppHeader extends StatefulWidget implements PreferredSizeWidget {
   final bool showFavourite;
@@ -15,7 +19,7 @@ class MainAppHeader extends StatefulWidget implements PreferredSizeWidget {
   const MainAppHeader({super.key, this.showFavourite = false});
 
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  Size get preferredSize => const Size.fromHeight(50);
 
   @override
   State<MainAppHeader> createState() => _MainAppHeaderState();
@@ -49,9 +53,8 @@ class _MainAppHeaderState extends State<MainAppHeader> {
   Future<void> _signOut() async {
     await supabase.auth.signOut();
     
-    // ДОДАНО: Очищаємо локальні лайки, щоб гість їх не бачив
-    AppState.clearFavorites();
-    AppState.resetPreferences(); 
+    AppState.clearUserData(); 
+    AppState.resetPreferences();
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +84,7 @@ class _MainAppHeaderState extends State<MainAppHeader> {
       backgroundColor: const Color(0xFFF7F3E8),
       elevation: 0,
       scrolledUnderElevation: 0,
-      toolbarHeight: 60,
+      toolbarHeight: isMobile ? 50 : 60,
       titleSpacing: 0,
       title: Padding(
         padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 24.0),
@@ -93,13 +96,16 @@ class _MainAppHeaderState extends State<MainAppHeader> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
+                  // Плавний перехід на головну
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    PremiumTransition(page: const HomeScreen()),
                     (Route<dynamic> route) => false, 
                   );
                 },
-                child: Image.asset('assets/logo.png', height: 30),
+                child: Image.asset(
+                  'assets/logo.png', 
+                  height: isMobile ? 38 : 30, ),
               ),
             ),
 
@@ -107,26 +113,6 @@ class _MainAppHeaderState extends State<MainAppHeader> {
             if (!isMobile)
               Row(
                 children: [
-                  // === ВИПРАВЛЕНО: widget.showFavourite ===
-                  if (widget.showFavourite) ...[
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
-                        },
-                        child: const Row(
-                          children: [
-                            Text('Favourite', style: TextStyle(fontFamily: 'SFPro', color: Colors.black87, fontSize: 13)),
-                            SizedBox(width: 4),
-                            Icon(Icons.favorite_border, color: Colors.black87, size: 16),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                  ],
-                  
                   _buildNavText(context, 'Settings', Icons.settings_outlined, const SettingsScreen()),
                   const SizedBox(width: 16),
                   _buildNavText(context, 'About us', Icons.info_outline, const AboutUsScreen()),
@@ -140,7 +126,9 @@ class _MainAppHeaderState extends State<MainAppHeader> {
                       cursor: SystemMouseCursors.click,
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
+                          // Плавний перехід на авторизацію
+                          Navigator.push(context, PremiumTransition(page: const AuthScreen()));
+
                         },
                         child: const Text('Sign in', style: TextStyle(fontFamily: 'SFPro', color: Colors.black87, fontSize: 13, fontWeight: FontWeight.bold)),
                       ),
@@ -149,7 +137,8 @@ class _MainAppHeaderState extends State<MainAppHeader> {
                     
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
+                        // Плавний перехід на реєстрацію
+                        Navigator.push(context, PremiumTransition(page: const AuthScreen(isLoginMode: false))); 
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4A5556),
@@ -166,7 +155,7 @@ class _MainAppHeaderState extends State<MainAppHeader> {
             else
               // ГАМБУРГЕР-МЕНЮ ДЛЯ МОБІЛОК
               IconButton(
-                icon: const Icon(Icons.menu, color: Colors.black87, size: 28),
+                icon: const Icon(Icons.menu, color: Colors.black87, size: 24),
                 onPressed: () => _showMobileMenu(context),
               ),
           ],
@@ -190,7 +179,15 @@ class _MainAppHeaderState extends State<MainAppHeader> {
         ),
       ),
       onSelected: (value) {
-        if (value == 'logout') _signOut();
+        if (value == 'logout') {
+          _signOut();
+        } else if (value == 'favorites') {
+          Navigator.push(context, PremiumTransition(page: const FavoritesScreen()));
+        } else if (value == 'visited') {
+          Navigator.push(context, PremiumTransition(page: const VisitedCitiesScreen()));
+        } else if (value == 'reviews') {
+          Navigator.push(context, PremiumTransition(page: const MyReviewsScreen()));
+        } 
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         PopupMenuItem<String>(
@@ -203,6 +200,39 @@ class _MainAppHeaderState extends State<MainAppHeader> {
                 _user?.email ?? 'User',
                 style: const TextStyle(fontFamily: 'SFPro', fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF4A5556)),
               ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        
+        const PopupMenuItem(
+          value: 'favorites',
+          child: Row(
+            children: [
+              Icon(Icons.favorite_border, size: 18, color: Colors.black87),
+              SizedBox(width: 12),
+              Text('My Favorites', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+        
+        const PopupMenuItem(
+          value: 'visited',
+          child: Row(
+            children: [
+              Icon(Icons.map_outlined, size: 18, color: Colors.black87),
+              SizedBox(width: 12),
+              Text('Visited Cities', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'reviews',
+          child: Row(
+            children: [
+              Icon(Icons.star_outline, size: 18, color: Colors.black87),
+              SizedBox(width: 12),
+              Text('My Reviews', style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -225,7 +255,8 @@ class _MainAppHeaderState extends State<MainAppHeader> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => destination)),
+        // Плавний перехід для текстових посилань
+        onTap: () => Navigator.push(context, PremiumTransition(page: destination)),
         child: Row(
           children: [
             Text(text, style: const TextStyle(fontFamily: 'SFPro', color: Colors.black87, fontSize: 13)),
@@ -237,81 +268,92 @@ class _MainAppHeaderState extends State<MainAppHeader> {
     );
   }
 
-  void _showMobileMenu(BuildContext context) {
+ void _showMobileMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // <--- ДОДАНО: Дозволяє меню займати більше місця по висоті
       backgroundColor: const Color(0xFFF7F3E8),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildMobileMenuItem(context, 'Favourite', Icons.favorite_border, const FavoritesScreen()),
-                const SizedBox(height: 16),
-                _buildMobileMenuItem(context, 'Settings', Icons.settings_outlined, const SettingsScreen()),
-                const SizedBox(height: 16),
-                _buildMobileMenuItem(context, 'About us', Icons.info_outline, const AboutUsScreen()),
-                const SizedBox(height: 32),
-                
-                if (_user != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Column(
-                      children: [
-                        Text('Signed in as', style: TextStyle(fontFamily: 'SFPro', fontSize: 12, color: Colors.grey.shade600)),
-                        const SizedBox(height: 4),
-                        Text(
-                          _user!.email ?? '',
-                          style: const TextStyle(fontFamily: 'SFPro', fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF4A5556)),
-                        ),
-                      ],
-                    ),
-                  ),
+          // === ДОДАНО SingleChildScrollView ===
+          child: SingleChildScrollView( 
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildMobileMenuItem(context, 'Settings', Icons.settings_outlined, const SettingsScreen()),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _signOut();
-                    },
-                    icon: const Icon(Icons.logout, size: 18),
-                    label: const Text('Sign out', style: TextStyle(fontFamily: 'SFPro', fontSize: 14, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade50,
-                      foregroundColor: Colors.redAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      elevation: 0,
-                    ),
-                  ),
-                ] else ...[
-                  _buildMobileMenuItem(context, 'Sign in', Icons.login, const AuthScreen()),
+                  _buildMobileMenuItem(context, 'About us', Icons.info_outline, const AboutUsScreen()),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); 
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4A5556),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      elevation: 0,
+                  
+                  if (_user != null) ...[
+                    _buildMobileMenuItem(context, 'My Favorites', Icons.favorite_border, const FavoritesScreen()),
+                    const SizedBox(height: 16),
+                    
+                    _buildMobileMenuItem(context, 'Visited Cities', Icons.map_outlined, const VisitedCitiesScreen()),
+                    const SizedBox(height: 16),
+                    
+                    _buildMobileMenuItem(context, 'My Reviews', Icons.star_outline, const MyReviewsScreen()),
+                    const SizedBox(height: 16),
+
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Column(
+                        children: [
+                          Text('Signed in as', style: TextStyle(fontFamily: 'SFPro', fontSize: 12, color: Colors.grey.shade600)),
+                          const SizedBox(height: 4),
+                          Text(
+                            _user!.email ?? '',
+                            style: const TextStyle(fontFamily: 'SFPro', fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF4A5556)),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: const Text('Register', style: TextStyle(fontFamily: 'SFPro', fontSize: 14, fontWeight: FontWeight.bold)),
-                  ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _signOut();
+                      },
+                      icon: const Icon(Icons.logout, size: 18),
+                      label: const Text('Sign out', style: TextStyle(fontFamily: 'SFPro', fontSize: 14, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade50,
+                        foregroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ] else ...[
+                    _buildMobileMenuItem(context, 'Sign in', Icons.login, const AuthScreen()),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); 
+                        Navigator.push(context, PremiumTransition(page: const AuthScreen(isLoginMode: false))); 
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4A5556),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Register', style: TextStyle(fontFamily: 'SFPro', fontSize: 14, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );
@@ -323,7 +365,8 @@ class _MainAppHeaderState extends State<MainAppHeader> {
     return InkWell(
       onTap: () {
         Navigator.pop(context); 
-        Navigator.push(context, MaterialPageRoute(builder: (context) => destination));
+        // Плавний перехід для мобільного меню
+        Navigator.push(context, PremiumTransition(page: destination));
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),

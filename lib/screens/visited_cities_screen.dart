@@ -6,14 +6,14 @@ import '../widgets/custom_header.dart';
 import '../widgets/city_card.dart';
 import '../widgets/city_card_mobile.dart'; // Імпортуємо мобільну картку
 
-class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({super.key});
+class VisitedCitiesScreen extends StatefulWidget {
+  const VisitedCitiesScreen({super.key});
 
   @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
+  State<VisitedCitiesScreen> createState() => _VisitedCitiesScreenState();
 }
 
-class _FavoritesScreenState extends State<FavoritesScreen> {
+class _VisitedCitiesScreenState extends State<VisitedCitiesScreen> {
   final Color bgScreen = const Color(0xFFF7F3E8);
   final Color textDark = const Color(0xFF2B3233);
   final Color innerContainerBg = const Color(0xFFE8E0CE);
@@ -34,16 +34,16 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     return Scaffold(
       backgroundColor: bgScreen,
-      appBar: const MainAppHeader(showFavourite: false),
+      appBar: const MainAppHeader(showFavourite: true), // Тут показуємо сердечко, бо ми не на екрані Favorites
       body: ValueListenableBuilder<List<City>>(
-        valueListenable: AppState.favorites,
-        builder: (context, favList, child) {
+        valueListenable: AppState.visitedCities, // Слухаємо список відвіданих міст
+        builder: (context, visitedList, child) {
           
-          if (favList.isEmpty) {
+          if (visitedList.isEmpty) {
             return _buildEmptyState();
           }
 
-          // === МОБІЛЬНА ВЕРСІЯ: Вертикальний скрол як на головній ===
+          // === МОБІЛЬНА ВЕРСІЯ: Чистий вертикальний список ===
           if (isMobile) {
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -51,17 +51,23 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'MY FAVORITES',
-                    style: TextStyle(fontFamily: 'SFPro', fontSize: 28, fontWeight: FontWeight.w900, color: textDark),
+                    'VISITED CITIES',
+                    style: TextStyle(
+                      fontFamily: 'SFPro', 
+                      fontSize: 28, 
+                      fontWeight: FontWeight.w900, 
+                      color: textDark,
+                      letterSpacing: -0.5
+                    ),
                   ),
                   const SizedBox(height: 24),
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: favList.length,
+                    itemCount: visitedList.length,
                     itemBuilder: (context, index) => Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: CityCardMobile(city: favList[index]),
+                      child: CityCardMobile(city: visitedList[index]),
                     ),
                   ),
                 ],
@@ -69,9 +75,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             );
           }
 
-          // === ПК ВЕРСІЯ: Пагінація у бежевому боксі ===
+          // === ПК ВЕРСІЯ: Горизонтальна пагінація ===
           int columns = 3;
-          int totalPages = (favList.length / columns).ceil();
+          int totalPages = (visitedList.length / columns).ceil();
 
           return Center(
             child: Container(
@@ -81,7 +87,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'MY FAVORITES',
+                    'VISITED CITIES',
                     style: TextStyle(fontFamily: 'SFPro', fontSize: 36, fontWeight: FontWeight.w900, color: textDark),
                   ),
                   const SizedBox(height: 24),
@@ -102,8 +108,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               itemCount: totalPages,
                               itemBuilder: (context, pageIndex) {
                                 int startIndex = pageIndex * columns;
-                                int endIndex = min(startIndex + columns, favList.length);
-                                List<City> pageCities = favList.sublist(startIndex, endIndex);
+                                int endIndex = min(startIndex + columns, visitedList.length);
+                                List<City> pageCities = visitedList.sublist(startIndex, endIndex);
 
                                 return Row(
                                   children: List.generate(columns, (colIndex) {
@@ -143,9 +149,17 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.favorite_border, size: 64, color: Colors.grey.shade400),
+          Icon(Icons.map_outlined, size: 64, color: Colors.grey.shade400),
           const SizedBox(height: 16),
-          const Text('No favorites yet.', style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold)),
+          const Text(
+            'You haven\'t visited any cities yet.', 
+            style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold)
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Mark a city as visited to see it here!', 
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500)
+          ),
         ],
       ),
     );
@@ -162,9 +176,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           return Container(
             margin: const EdgeInsets.symmetric(horizontal: 4),
             width: 32, height: 32,
-            decoration: BoxDecoration(color: isActive ? Colors.white : Colors.transparent, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: isActive ? Colors.white : Colors.transparent, 
+              shape: BoxShape.circle
+            ),
             alignment: Alignment.center,
-            child: Text('${index + 1}', style: TextStyle(fontWeight: isActive ? FontWeight.bold : FontWeight.normal, color: isActive ? textDark : Colors.white70)),
+            child: Text(
+              '${index + 1}', 
+              style: TextStyle(
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal, 
+                color: isActive ? textDark : Colors.white70
+              )
+            ),
           );
         }),
       ),

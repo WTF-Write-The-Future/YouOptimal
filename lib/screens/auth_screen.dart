@@ -1,22 +1,24 @@
-import 'dart:async'; // ДОДАНО: для відстеження змін статусу (логін/логаут)
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../screens/favorites_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/about_us_screen.dart';
 import '../screens/home_screen.dart';
 import '../state/app_state.dart';
+import '../utils/custom_snackbar.dart'; // Твоя красива вспливашка!
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final bool isLoginMode; // ДОДАНО: Параметр, щоб знати, що відкривати
+
+  const AuthScreen({super.key, this.isLoginMode = true});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool isLogin = true;
+  late bool isLogin; // ДОДАНО: тепер це late, бо беремо з widget
   bool _isLoading = false;
 
   final TextEditingController _emailController = TextEditingController();
@@ -24,17 +26,15 @@ class _AuthScreenState extends State<AuthScreen> {
 
   final supabase = Supabase.instance.client;
   
-  // ДОДАНО: Змінні для зберігання поточного користувача
   User? _user;
   late final StreamSubscription<AuthState> _authStateSubscription;
 
   @override
   void initState() {
     super.initState();
-    // Отримуємо поточного користувача при запуску екрану
+    isLogin = widget.isLoginMode; // Встановлюємо стартовий режим
     _user = supabase.auth.currentUser;
     
-    // Слухаємо зміни: якщо користувач залогінився або вийшов - оновлюємо екран
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) {
       if (mounted) {
         setState(() {
@@ -48,7 +48,7 @@ class _AuthScreenState extends State<AuthScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _authStateSubscription.cancel(); // Обов'язково закриваємо слухача
+    _authStateSubscription.cancel(); 
     super.dispose();
   }
 
@@ -58,73 +58,82 @@ class _AuthScreenState extends State<AuthScreen> {
     });
   }
 
-  void _showCustomSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 30, left: 24, right: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: isError 
-            ? Colors.red.shade400 
-            : const Color(0xFFC9BA9B),
-        elevation: 0,
-        content: Row(
-          children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.check_circle_outline,
-              color: isError ? Colors.white : const Color(0xFF4A5556),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  fontFamily: 'SFPro',
-                  color: isError ? Colors.white : const Color(0xFF4A5556),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _authenticate() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    // 1. Перевірка на порожні поля
     if (email.isEmpty || password.isEmpty) {
-      _showCustomSnackBar('Please fill in all fields', isError: true);
+      CustomSnackBar.show(context, message: 'Please fill in all fields', isError: true);
       return;
     }
 
+    // 2. Базова перевірка формату email (наявність @ та крапки)
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      CustomSnackBar.show(context, message: 'Please enter a valid email address', isError: true);
+      return;
+    }
+
+    // 3. Захист від популярних опечаток (UX покращення)
+    if (email.endsWith('.con') || email.endsWith('.cmo') || email.endsWith('.xom')) {
+      CustomSnackBar.show(context, message: 'Looks like a typo. Did you mean .com?', isError: true);
+      return;
+    }
+    
+    // Блокуємо небажані домени (опціонально)
+    if (email.endsWith('.ru') || email.endsWith('.by')) {
+      CustomSnackBar.show(context, message: 'Москаляку на гіляку', isError: true);
+      return;
+    }
+
+    // 4. Валідація довжини пароля при реєстрації
+    if (!isLogin && password.length < 6) {
+      CustomSnackBar.show(context, message: 'Password must be at least 6 characters long', isError: true);
+      return;
+    }
+
+    // Далі йде твій старий код, нічого не змінюємо
     setState(() {
       _isLoading = true;
     });
 
     try {
       if (isLogin) {
-        // ЛОГІКА ВХОДУ
+        // === ЛОГІКА ВХОДУ ===
         await supabase.auth.signInWithPassword(
           email: email,
           password: password,
         );
         
-        // ДОДАНО: Юзер успішно увійшов - миттєво підтягуємо його лайки!
-       await AppState.syncFavorites();
-      await AppState.syncPreferences();
-       
+        await AppState.syncFavorites();
+        await AppState.syncReviewCount();
+        AppState.syncVisitedCities();
+        await AppState.syncPreferences();
         
         if (mounted) {
-          _showCustomSnackBar('Successfully logged in!');
+          CustomSnackBar.show(context, message: 'Successfully logged in!');
+        }
+      } else {
+        // === ДОДАНО: ЛОГІКА РЕЄСТРАЦІЇ ===
+        await supabase.auth.signUp(
+          email: email,
+          password: password,
+        );
+        
+        if (mounted) {
+          CustomSnackBar.show(context, message: 'Registration successful! You can now sign in.');
+          setState(() {
+            isLogin = true; // Перемикаємо на логін після реєстрації
+            _passwordController.clear(); // Очищаємо пароль для безпеки
+          });
         }
       }
     } on AuthException catch (error) {
-      if (mounted) _showCustomSnackBar(error.message, isError: true);
+      // Supabase сам поверне красиві помилки: "User already registered", "Password should be at least 6 characters" і тд.
+      if (mounted) CustomSnackBar.show(context, message: error.message, isError: true);
     } catch (error) {
-      if (mounted) _showCustomSnackBar('Something went wrong. Please try again.', isError: true);
+      if (mounted) CustomSnackBar.show(context, message: 'Something went wrong. Please try again.', isError: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -134,11 +143,10 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  // === ДОДАНО: Функція для виходу з акаунта ===
   Future<void> _signOut() async {
     await supabase.auth.signOut();
     if (mounted) {
-      _showCustomSnackBar('You have successfully signed out.');
+      CustomSnackBar.show(context, message: 'You have successfully signed out.');
     }
   }
 
@@ -165,20 +173,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const Spacer(),
                   if (MediaQuery.of(context).size.width > 600) ...[
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen())),
-                        child: const Row(
-                          children: [
-                            Text('Favourite', style: TextStyle(fontFamily: 'SFPro', fontSize: 13)),
-                            SizedBox(width: 4),
-                            Icon(Icons.favorite_border, size: 16),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: GestureDetector(
@@ -209,10 +203,10 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(width: 24),
                   ],
 
-                  // === ЛОГІКА ПЕРЕМИКАННЯ АВАТАР / КНОПКИ ===
+                  // ЛОГІКА ПЕРЕМИКАННЯ АВАТАР / КНОПКИ
                   _user != null
-                      ? _buildUserAvatarMenu() // Якщо залогінений - показуємо аватарку
-                      : (isLogin // Якщо ні - старі кнопки
+                      ? _buildUserAvatarMenu() 
+                      : (isLogin 
                           ? ElevatedButton(
                               onPressed: _isLoading ? null : _toggleAuthMode,
                               style: ElevatedButton.styleFrom(
@@ -252,10 +246,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 30),
 
-                      // === ЛОГІКА ВІДОБРАЖЕННЯ ФОРМИ АБО ВІТАННЯ ===
                       _user != null 
-                          ? _buildWelcomeCard() // Показуємо "Ласкаво просимо" якщо є юзер
-                          : _buildAuthForm(),   // Або форму входу/реєстрації
+                          ? _buildWelcomeCard() 
+                          : _buildAuthForm(), 
                       
                       const SizedBox(height: 40),
                     ],
@@ -269,10 +262,9 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // === НОВИЙ ВІДЖЕТ: Меню користувача (Аватар + Випадне меню) ===
   Widget _buildUserAvatarMenu() {
     return PopupMenuButton<String>(
-      offset: const Offset(0, 45), // Опускаємо меню трохи нижче аватара
+      offset: const Offset(0, 45), 
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       color: Colors.white,
       tooltip: 'Account',
@@ -280,7 +272,7 @@ class _AuthScreenState extends State<AuthScreen> {
         cursor: SystemMouseCursors.click,
         child: CircleAvatar(
           radius: 20,
-          backgroundColor: Color(0xFFC9BA9B), // Бежевий колір
+          backgroundColor: Color(0xFFC9BA9B), 
           child: Icon(Icons.person, color: Colors.white, size: 24),
         ),
       ),
@@ -291,7 +283,7 @@ class _AuthScreenState extends State<AuthScreen> {
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         PopupMenuItem<String>(
-          enabled: false, // Не клікабельно, просто інфо
+          enabled: false, 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -318,7 +310,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
- // === ОНОВЛЕНА КАРТКА ДЛЯ ЗАЛОГІНЕНОГО КОРИСТУВАЧА ===
   Widget _buildWelcomeCard() {
     return Container(
       width: 380,
@@ -344,14 +335,10 @@ class _AuthScreenState extends State<AuthScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(fontFamily: 'SFPro', fontSize: 13, color: Colors.grey.shade600),
           ),
-          const SizedBox(height: 32), // Відступ перед новою кнопкою
+          const SizedBox(height: 32), 
 
-          // === НОВА КНОПКА "LET'S TRAVEL" ===
           ElevatedButton(
             onPressed: () {
-              // Використовуємо pushAndRemoveUntil, щоб стерти історію переходів.
-              // Це потрібно, щоб при натисканні кнопки "Назад" на телефоні 
-              // користувача не викинуло знову на екран авторизації.
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -359,21 +346,21 @@ class _AuthScreenState extends State<AuthScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4A5556), // Темний колір для контрасту
+              backgroundColor: const Color(0xFF4A5556), 
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             child: const Row(
-              mainAxisSize: MainAxisSize.min, // Кнопка обтягує текст
+              mainAxisSize: MainAxisSize.min, 
               children: [
                 Text(
                   "LET'S TRAVEL",
                   style: TextStyle(fontFamily: 'SFPro', fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.0),
                 ),
                 SizedBox(width: 8),
-                Icon(Icons.arrow_forward_rounded, size: 18), // Іконка стрілочки
+                Icon(Icons.arrow_forward_rounded, size: 18), 
               ],
             ),
           ),
@@ -382,7 +369,6 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  // === ВІДЖЕТ ФОРМИ (Твій старий дизайн, тільки без Forgot Password) ===
   Widget _buildAuthForm() {
     return Container(
       width: 380,
@@ -399,13 +385,13 @@ class _AuthScreenState extends State<AuthScreen> {
         children: [
           const Text('Email', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'SFPro', fontSize: 12, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          _buildTextField(controller: _emailController, hintText: 'enter your email adress', obscureText: false),
+          _buildTextField(controller: _emailController, hintText: 'enter your email address', obscureText: false),
           const SizedBox(height: 20),
 
           const Text('Password', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'SFPro', fontSize: 12, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           _buildTextField(controller: _passwordController, hintText: isLogin ? 'enter your password' : 'create password', obscureText: true),
-          const SizedBox(height: 24), // Відступ змінено, бо немає Forgot Password
+          const SizedBox(height: 24),
 
           ElevatedButton(
             onPressed: _isLoading ? null : _authenticate,
