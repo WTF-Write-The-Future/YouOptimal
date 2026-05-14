@@ -243,17 +243,17 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
                   const SizedBox(height: 6),
                   
                   // ОПИС
-                  Text(
-                    'Explore the beautiful city of ${widget.city.name} in ${widget.city.country}. ',
-                    style: const TextStyle(
-                      fontFamily: 'SFPro', 
-                      color: Colors.white, 
-                      fontSize: 14, 
-                      fontWeight: FontWeight.normal, 
-                      height: 1.3,
-                    ),
-                    maxLines: 3, overflow: TextOverflow.ellipsis,
-                  ),
+                 Text(
+  widget.city.description, // ТЕПЕР ВИКОРИСТОВУЄМО РЕАЛЬНИЙ ОПИС
+  style: const TextStyle(
+    fontFamily: 'SFPro', 
+    color: Colors.white, 
+    fontSize: 14, 
+    height: 1.3,
+  ),
+  maxLines: 3, 
+  overflow: TextOverflow.ellipsis,
+),
                   const SizedBox(height: 16),
                   
                   // КНОПКА ТА ЗІРКИ
@@ -296,17 +296,53 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
     );
   }
 
-  Widget _buildStars(double rating) {
-    int starCount = (widget.city.rating / 20).ceil();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (index) {
-        return Icon(
-          index < starCount ? Icons.star : Icons.star_border,
-          color: Colors.white, 
-          size: 18,
-        );
-      }),
-    );
+ Widget _buildStars(double ratingFromDb) {
+  // 1. Конвертуємо 100-бальний рейтинг у 5-зірковий (напр. 88 / 20 = 4.4)
+  double starValue = ratingFromDb / 20; 
+
+  // 2. Визначаємо кількість цілих зірок
+  int fullStars = starValue.floor(); 
+  
+  // 3. Визначаємо, чи малювати половинку (якщо залишок від 0.25 до 0.75)
+  double fractionalPart = starValue - fullStars;
+  bool hasHalfStar = fractionalPart >= 0.25 && fractionalPart < 0.75;
+  
+  // 4. Якщо залишок дуже великий (>= 0.75), то зараховуємо це як ще одну повну зірку
+  if (fractionalPart >= 0.75) {
+    fullStars++;
+    hasHalfStar = false;
   }
+
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(5, (index) {
+          if (index < fullStars) {
+            // Повна золота зірка
+            return const Icon(Icons.star_rounded, color: Color(0xFFE8C872), size: 14);
+          } else if (index == fullStars && hasHalfStar) {
+            // Половинка золотої зірки
+            return const Icon(Icons.star_half_rounded, color: Color(0xFFE8C872), size: 14);
+          } else {
+            // Порожня біла зірка
+            return Icon(Icons.star_outline_rounded, color: Colors.white.withOpacity(0.5), size: 14);
+          }
+        }),
+      ),
+      const SizedBox(width: 4),
+      // Текстове число (напр. 4.4) — це найкращий доказ того, що баги немає
+      Text(
+        starValue.toStringAsFixed(1), 
+        style: const TextStyle(
+          fontFamily: 'SFPro', 
+          fontSize: 12, 
+          fontWeight: FontWeight.bold, 
+          color: Colors.white
+        ),
+      ),
+    ],
+  );
+}
 }

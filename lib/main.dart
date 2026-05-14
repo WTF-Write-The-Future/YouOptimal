@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'screens/home_screen.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Підключаємося до бази даних Supabase
+  try {
+    await dotenv.load(fileName: ".env");
+    print("✅ .env завантажено успішно");
+  } catch (e) {
+    print("❌ Помилка завантаження .env: $e");
+  }
+
+  final url = dotenv.env['SUPABASE_URL'] ?? '';
+final anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+
+print("Debug: URL is '$url'"); // Подивимось, чи там не пусто
+print("Debug: Key length is ${anonKey.length}");
+
+  if (url.isEmpty || anonKey.isEmpty) {
+    print("🚨 КРИТИЧНО: URL або AnonKey порожні! Перевір .env та pubspec.yaml");
+  }
+
   await Supabase.initialize(
-    url: 'https://mywhapfxkqjvqtakfxfe.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15d2hhcGZ4a3FqdnF0YWtmeGZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyODkwODIsImV4cCI6MjA4Nzg2NTA4Mn0.ZgN4lcZ_Qwn9YXRKsTChZye6GWgAYEt-s05iswep-NQ',
+    url: url,
+    anonKey: anonKey,
   );
 
   runApp(const MyApp());

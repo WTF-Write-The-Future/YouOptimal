@@ -25,6 +25,11 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _currentSort = 'Default'; 
   
+  // Нові змінні для фільтрів
+  double _minSafety = 0.0;
+  double _minInternet = 0.0;
+  String? _selectedCountry = 'All';
+  
   int _currentPage = 1;
   final int _itemsPerPage = 12; 
   bool _isLoading = true;
@@ -44,6 +49,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _minPriceController.dispose();
     _maxPriceController.dispose();
     super.dispose();
+  }
+
+  // Отримуємо список унікальних країн для Dropdown
+  List<String> get _availableCountries {
+    final countries = allCities.map((c) => c.country).toSet().toList();
+    countries.sort();
+    return ['All', ...countries];
   }
 
   Future<void> _loadCitiesFromApi() async {
@@ -85,9 +97,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // === ВИПРАВЛЕНИЙ ТА ОБ'ЄДНАНИЙ МЕТОД ФІЛЬТРАЦІЇ ===
   void _applyFiltersAndSort() {
     List<City> result = List.from(allCities);
 
+    // 1. Пошук за назвою
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       result = result.where((c) => 
@@ -96,18 +110,37 @@ class _HomeScreenState extends State<HomeScreen> {
       ).toList();
     }
 
-    double? minP = double.tryParse(_minPriceController.text);
-    double? maxP = double.tryParse(_maxPriceController.text);
-
-    if (minP != null || maxP != null) {
-      result = result.where((c) {
-        int convertedPrice = AppState.convertPrice(c.averagePrice.toInt());
-        bool minMatch = minP == null || convertedPrice >= minP;
-        bool maxMatch = maxP == null || convertedPrice <= maxP;
-        return minMatch && maxMatch;
-      }).toList();
+    // 2. Фільтр за Країною
+    if (_selectedCountry != null && _selectedCountry != 'All') {
+      result = result.where((c) => c.country == _selectedCountry).toList();
     }
 
+    // 3. Фільтр за Метриками (Ціна, Безпека, Інтернет)
+    result = result.where((city) {
+      int convertedPrice = AppState.convertPrice(city.averagePrice.toInt());
+
+      // Ціна мін
+      if (_minPriceController.text.isNotEmpty) {
+        final minP = double.tryParse(_minPriceController.text) ?? 0;
+        if (convertedPrice < minP) return false;
+      }
+      
+      // Ціна макс
+      if (_maxPriceController.text.isNotEmpty) {
+        final maxP = double.tryParse(_maxPriceController.text) ?? double.infinity;
+        if (convertedPrice > maxP) return false;
+      }
+
+      // Безпека
+      if (_minSafety > 0 && city.safetyIndex < _minSafety) return false;
+      
+      // Інтернет
+      if (_minInternet > 0 && city.internetSpeed < _minInternet) return false;
+
+      return true;
+    }).toList();
+
+    // 4. Сортування (Додано нові параметри!)
     switch (_currentSort) {
       case 'Price: Low to High':
         result.sort((a, b) => a.averagePrice.compareTo(b.averagePrice));
@@ -120,6 +153,12 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 'Rating: Low to High':
         result.sort((a, b) => a.rating.compareTo(b.rating));
+        break;
+      case 'Safety: High to Low': // НОВЕ
+        result.sort((a, b) => b.safetyIndex.compareTo(a.safetyIndex));
+        break;
+      case 'Internet: Fast to Slow': // НОВЕ
+        result.sort((a, b) => b.internetSpeed.compareTo(a.internetSpeed));
         break;
       default:
         result.sort((a, b) => a.id.compareTo(b.id));
@@ -149,48 +188,164 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         contentPadding: const EdgeInsets.all(32),
         title: const Center(
-          child: Text('Price Range', style: TextStyle(fontFamily: 'SFPro', fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF485759))),
+          child: Text('Filters', style: TextStyle(fontFamily: 'SFPro', fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF485759))),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 16),
-            _buildCustomTextField(_minPriceController, 'Min Price (${AppState.getCurrencySymbol()})'),
-            const SizedBox(height: 16),
-            _buildCustomTextField(_maxPriceController, 'Max Price (${AppState.getCurrencySymbol()})'),
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () {
-                      _minPriceController.clear();
-                      _maxPriceController.clear();
-                      _applyFiltersAndSort();
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Reset', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey)),
-                  ),
-                ),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () { 
-                      _applyFiltersAndSort(); 
-                      Navigator.pop(context);
-                      _scrollToTop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFC1D7D8), 
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
+        content: StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return Container(
+              constraints: const BoxConstraints(maxWidth: 500), // Адаптивність для ПК
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- ФІЛЬТР КРАЇНИ ---
+                    const Text('Country', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                  Container(
+  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  decoration: BoxDecoration(
+    color: bgColor, // Твій колір фонy (F7F3E8)
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: const Color(0xFFDCD5C6), width: 1), // Легкий контур
+  ),
+  child: DropdownButtonHideUnderline(
+    child: DropdownButton<String>(
+      isExpanded: true,
+      value: _selectedCountry,
+      // Кастомізація самого вікна списку:
+      dropdownColor: const Color(0xFFFDFCF9), // Світліший відтінок для контрасту
+      borderRadius: BorderRadius.circular(20),
+      elevation: 8,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF485759)),
+      style: const TextStyle(
+        fontFamily: 'SFPro',
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF485759),
+      ),
+      items: _availableCountries.map((String country) {
+        return DropdownMenuItem<String>(
+          value: country,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(country),
+          ),
+        );
+      }).toList(),
+      onChanged: (String? newValue) {
+        setStateDialog(() => _selectedCountry = newValue);
+      },
+    ),
+  ),
+),
+                    const SizedBox(height: 24),
+
+                    // --- ФІЛЬТР ЦІНИ ---
+                    const Text('Price Range', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _buildCustomTextField(_minPriceController, 'Min (${AppState.getCurrencySymbol()})')),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildCustomTextField(_maxPriceController, 'Max (${AppState.getCurrencySymbol()})')),
+                      ],
                     ),
-                    child: const Text('Apply', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                  ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // --- ФІЛЬТР БЕЗПЕКИ ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Min Safety Index', style: TextStyle(fontFamily: 'SFPro', fontSize: 16, fontWeight: FontWeight.w600)),
+                        Text('${_minSafety.toInt()}', style: const TextStyle(fontFamily: 'SFPro', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFC1D7D8))),
+                      ],
+                    ),
+                    Slider(
+                      value: _minSafety,
+                      min: 0,
+                      max: 100,
+                      divisions: 20,
+                      activeColor: const Color(0xFFC1D7D8),
+                      inactiveColor: Colors.grey.shade300,
+                      onChanged: (value) {
+                        setStateDialog(() => _minSafety = value);
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // --- ФІЛЬТР ІНТЕРНЕТУ ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Min Internet Speed', style: TextStyle(fontFamily: 'SFPro', fontSize: 16, fontWeight: FontWeight.w600)),
+                        Text('${_minInternet.toInt()} Mbps', style: const TextStyle(fontFamily: 'SFPro', fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFC1D7D8))),
+                      ],
+                    ),
+                    Slider(
+                      value: _minInternet,
+                      min: 0,
+                      max: 300,
+                      divisions: 30,
+                      activeColor: const Color(0xFFC1D7D8),
+                      inactiveColor: Colors.grey.shade300,
+                      onChanged: (value) {
+                        setStateDialog(() => _minInternet = value);
+                      },
+                    ),
+
+                    const SizedBox(height: 32),
+                    
+                    // --- КНОПКИ ---
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () {
+                              setStateDialog(() {
+                                _minPriceController.clear();
+                                _maxPriceController.clear();
+                                _minSafety = 0.0;
+                                _minInternet = 0.0;
+                                _selectedCountry = 'All';
+                              });
+                              setState(() {
+                                _minSafety = 0.0;
+                                _minInternet = 0.0;
+                                _selectedCountry = 'All';
+                              });
+                              _applyFiltersAndSort();
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Reset', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey)),
+                          ),
+                        ),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () { 
+                              setState(() {}); 
+                              _applyFiltersAndSort(); 
+                              Navigator.pop(context);
+                              _scrollToTop();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFC1D7D8), 
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))
+                            ),
+                            child: const Text('Apply', style: TextStyle(fontFamily: 'SFPro', fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
                 ),
-              ],
-            )
-          ],
+              ),
+            );
+          }
         ),
       ),
     );
@@ -202,7 +357,9 @@ class _HomeScreenState extends State<HomeScreen> {
       'Price: Low to High',
       'Price: High to Low',
       'Rating: High to Low',
-      'Rating: Low to High'
+      'Rating: Low to High',
+      'Safety: High to Low',   // ДОДАНО
+      'Internet: Fast to Slow' // ДОДАНО
     ];
 
     showDialog(
@@ -214,32 +371,37 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Center(
           child: Text('Sort by', style: TextStyle(fontFamily: 'SFPro', fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF485759))),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: sortOptions.map((option) {
-            bool isSelected = _currentSort == option;
-            return ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-              title: Text(
-                option, 
-                style: TextStyle(
-                  fontFamily: 'SFPro', 
-                  fontSize: 20, 
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? Colors.black87 : Colors.grey.shade600
-                )
-              ),
-              trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFFC1D7D8)) : null,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              hoverColor: const Color(0xFFF7F3E8),
-              onTap: () {
-                setState(() => _currentSort = option);
-                _applyFiltersAndSort();
-                Navigator.pop(context);
-                _scrollToTop();
-              },
-            );
-          }).toList(),
+        content: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: sortOptions.map((option) {
+                bool isSelected = _currentSort == option;
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  title: Text(
+                    option, 
+                    style: TextStyle(
+                      fontFamily: 'SFPro', 
+                      fontSize: 20, 
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? Colors.black87 : Colors.grey.shade600
+                    )
+                  ),
+                  trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFFC1D7D8)) : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  hoverColor: const Color(0xFFF7F3E8),
+                  onTap: () {
+                    setState(() => _currentSort = option);
+                    _applyFiltersAndSort();
+                    Navigator.pop(context);
+                    _scrollToTop();
+                  },
+                );
+              }).toList(),
+            ),
+          ),
         ),
       ),
     );
@@ -295,7 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -364,21 +526,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken)
                 ),
               ),
-              child: Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: EdgeInsets.only(right: isMobile ? 20 : 60, bottom: isMobile ? 15 : 40),
-                  child: Text(
-                    'Discover your city.', 
-                    style: TextStyle(
-                      fontFamily: 'SFPro', 
-                      fontWeight: FontWeight.bold, 
-                      fontSize: isMobile ? 32 : 80, 
-                      color: const Color(0xA6F5F5F5)
-                    )
-                  ),
-                ),
-              ),
+child: Align(
+  alignment: Alignment.bottomRight,
+  child: Padding(
+    // Трохи підправив відступи, щоб текст не тулився до краю
+    padding: EdgeInsets.only(
+      right: isMobile ? 20 : 60, 
+      bottom: isMobile ? 15 : 60, // Збільшив нижній відступ для десктопа
+    ),
+    child: Text(
+      'Find your perfect place to live.', 
+      style: TextStyle(
+        fontFamily: 'SFPro', 
+        fontWeight: FontWeight.w900, // Зробив шрифт жирнішим (Black), так краще для заголовків
+        fontSize: isMobile ? 28 : 54, // Зменшив: було 32/80 -> стало 28/54
+        color: const Color(0xFFF5F5F5).withOpacity(0.8), // Більш чистий колір з м'якою прозорістю
+        letterSpacing: -1.2, // Додав від'ємний інтервал для сучасного вигляду
+      ),
+    ),
+  ),
+),
             ),
           ),
 
@@ -394,7 +561,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(40),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: TextField(
                       controller: _searchController,
@@ -415,7 +582,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // 3. Заголовок "For you", кнопки (НАД лінією) та сама лінія
+          // 3. Заголовок "For you", кнопки та лінія
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -440,7 +607,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: const Color(0xFF485759)
                         )
                       ),
-                      // Використовуємо нові анімовані кнопки
                       Row(
                         children: [
                           AnimatedHoverButton(
@@ -458,9 +624,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12), // Відступ від кнопок до лінії
+                  const SizedBox(height: 12),
                   const Divider(color: Color(0xFFDCD5C6), thickness: 1),
-                  const SizedBox(height: 24), // Відступ від лінії до карток міст (робимо їх близько)
+                  const SizedBox(height: 24), 
                 ],
               ),
             ),
@@ -525,7 +691,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _currentPage > 1 ? const Color(0xFFC1D7D8).withValues(alpha: 0.3) : Colors.transparent,
+                color: _currentPage > 1 ? const Color(0xFFC1D7D8).withOpacity(0.3) : Colors.transparent,
               ),
               child: Icon(Icons.chevron_left, color: _currentPage > 1 ? Colors.black87 : Colors.grey.shade300, size: 28),
             ),
@@ -551,7 +717,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _currentPage < totalPages ? const Color(0xFFC1D7D8).withValues(alpha: 0.3) : Colors.transparent,
+                color: _currentPage < totalPages ? const Color(0xFFC1D7D8).withOpacity(0.3) : Colors.transparent,
               ),
               child: Icon(Icons.chevron_right, color: _currentPage < totalPages ? Colors.black87 : Colors.grey.shade300, size: 28),
             ),
@@ -575,7 +741,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _currentPage > 1 ? const Color(0xFFC1D7D8).withValues(alpha: 0.3) : Colors.transparent,
+            color: _currentPage > 1 ? const Color(0xFFC1D7D8).withOpacity(0.3) : Colors.transparent,
           ),
           child: Icon(Icons.chevron_left, color: _currentPage > 1 ? Colors.black87 : Colors.grey.shade300),
         ),
@@ -608,7 +774,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _currentPage < totalPages ? const Color(0xFFC1D7D8).withValues(alpha: 0.3) : Colors.transparent,
+            color: _currentPage < totalPages ? const Color(0xFFC1D7D8).withOpacity(0.3) : Colors.transparent,
           ),
           child: Icon(Icons.chevron_right, color: _currentPage < totalPages ? Colors.black87 : Colors.grey.shade300),
         ),
@@ -639,7 +805,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// === НОВИЙ ВІДЖЕТ АНІМОВАНОЇ КНОПКИ З ХОВЕРОМ ===
+// === АНІМОВАНА КНОПКА З ХОВЕРОМ ===
 class AnimatedHoverButton extends StatefulWidget {
   final String text;
   final IconData icon;
@@ -672,10 +838,8 @@ class _AnimatedHoverButtonState extends State<AnimatedHoverButton> {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            // Колір трохи темнішає при наведенні
             color: _isHovered ? const Color(0xFFDED8C9) : const Color(0xFFEBE6D9),
             borderRadius: BorderRadius.circular(30),
-            // З'являється м'яка тінь
             boxShadow: _isHovered
                 ? [
                     BoxShadow(
@@ -686,7 +850,6 @@ class _AnimatedHoverButtonState extends State<AnimatedHoverButton> {
                   ]
                 : [],
           ),
-          // Кнопка дуже плавно і ледь-ледь збільшується
           transform: Matrix4.identity()..scale(_isHovered ? 1.03 : 1.0),
           transformAlignment: Alignment.center,
           child: Row(

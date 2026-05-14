@@ -9,18 +9,22 @@ class CityCardMobile extends StatelessWidget {
 
   const CityCardMobile({super.key, required this.city});
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.push(context, PremiumTransition(page: CityDetailsScreen(city: city))),
+      onTap: () => Navigator.push(
+        context, 
+        PremiumTransition(page: CityDetailsScreen(city: city))
+      ),
       child: Container(
         height: 240,
         width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
+              color: Colors.black.withOpacity(0.15),
               blurRadius: 20,
               offset: const Offset(0, 10),
             )
@@ -31,18 +35,18 @@ class CityCardMobile extends StatelessWidget {
           child: Stack(
             children: [
               // 1. ФОТО
-              // 1. ФОТО
               Positioned.fill(
                 child: Hero(
                   tag: 'hero-city-image-${city.id}',
                   child: Material(
-                    type: MaterialType.transparency, // МАГІЯ ДЛЯ ПЛАВНОСТІ
+                    type: MaterialType.transparency,
                     child: city.image.isNotEmpty 
                       ? Image.network(
                           city.image, 
                           fit: BoxFit.cover,
-                          cacheWidth: 600,
-                          errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey),
+                          cacheWidth: 800,
+                          errorBuilder: (context, error, stackTrace) => 
+                            Container(color: Colors.grey.shade300, child: const Icon(Icons.image_not_supported)),
                         )
                       : Container(color: Colors.grey),
                   ),
@@ -51,14 +55,14 @@ class CityCardMobile extends StatelessWidget {
 
               // 2. ГРАДІЄНТ
               Positioned.fill(
-                child: Container(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.8),
+                        Colors.black.withOpacity(0.85),
                       ],
                       stops: const [0.4, 1.0],
                     ),
@@ -67,102 +71,115 @@ class CityCardMobile extends StatelessWidget {
               ),
 
               // 3. КОНТЕНТ
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Кнопка VIEW
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'VIEW', 
-                            style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.w900, fontSize: 12, color: Colors.black)
-                          ),
-                        ),
-                        
-                        // АНІМОВАНІ ІКОНКИ СТАТУСІВ
-                        Row(
-                          children: [
-                            // Анімована "Галочка"
-                            ValueListenableBuilder<List<City>>(
-                              valueListenable: AppState.visitedCities,
-                              builder: (context, visitedList, _) {
-                                bool isVisited = visitedList.any((c) => c.id == city.id);
-                                return AnimatedStatusIcon(
-                                  isActive: isVisited,
-                                  activeIcon: Icons.check_circle_rounded,
-                                  inactiveIcon: Icons.check_circle_outline_rounded,
-                                  activeColor: const Color(0xFF53D769),
-                                  onTap: () => AppState.toggleVisited(context, city),
-                                );
-                              },
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    children: [
+                      // ПАНЕЛЬ ІКОНОК (ВЕРХ)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                            const SizedBox(width: 10),
-                            // Анімоване "Серце"
-                            ValueListenableBuilder<List<City>>(
-                              valueListenable: AppState.favorites,
-                              builder: (context, favList, _) {
-                                bool isFav = favList.any((c) => c.id == city.id);
-                                return AnimatedStatusIcon(
-                                  isActive: isFav,
-                                  activeIcon: Icons.favorite,
-                                  inactiveIcon: Icons.favorite_border,
-                                  activeColor: const Color(0xFFC9BA9B),
-                                  onTap: () => AppState.toggleFavorite(context, city),
-                                );
-                              },
+                            child: const Text(
+                              'VIEW', 
+                              style: TextStyle(fontFamily: 'SFPro', fontWeight: FontWeight.w900, fontSize: 12, color: Colors.black)
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    
-                    // ІНФО (Назва, Ціна)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                          Row(
                             children: [
-                              Text(
-                                city.name.toUpperCase(), 
-                                style: const TextStyle(fontFamily: 'SFPro', color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900, height: 1.1)
+                              ValueListenableBuilder<List<City>>(
+                                valueListenable: AppState.visitedCities,
+                                builder: (context, visitedList, _) {
+                                  bool isVisited = visitedList.any((c) => c.id == city.id);
+                                  return AnimatedStatusIcon(
+                                    isActive: isVisited,
+                                    activeIcon: Icons.check_circle_rounded,
+                                    inactiveIcon: Icons.check_circle_outline_rounded,
+                                    activeColor: const Color(0xFF53D769),
+                                    onTap: () => AppState.toggleVisited(context, city),
+                                  );
+                                },
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Explore the beautiful city of ${city.name} in ${city.country}.", 
-                                style: TextStyle(fontFamily: 'SFPro', color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                              const SizedBox(width: 10),
+                              ValueListenableBuilder<List<City>>(
+                                valueListenable: AppState.favorites,
+                                builder: (context, favList, _) {
+                                  bool isFav = favList.any((c) => c.id == city.id);
+                                  return AnimatedStatusIcon(
+                                    isActive: isFav,
+                                    activeIcon: Icons.favorite,
+                                    inactiveIcon: Icons.favorite_border,
+                                    activeColor: const Color(0xFFC9BA9B),
+                                    onTap: () => AppState.toggleFavorite(context, city),
+                                  );
+                                },
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${AppState.getCurrencySymbol()}${AppState.convertPrice(city.averagePrice.toInt())}/mo',
-                              style: const TextStyle(fontFamily: 'SFPro', color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.0),
+                        ],
+                      ),
+                      
+                      const Spacer(),
+
+                      // НАЗВА ТА ЦІНА
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            city.name.toUpperCase(), 
+                            style: const TextStyle(
+                              fontFamily: 'SFPro', 
+                              color: Colors.white, 
+                              fontSize: 28, 
+                              fontWeight: FontWeight.w900, 
+                              height: 1.1
                             ),
-                            const SizedBox(height: 4),
-                            _buildStars(city.rating),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                          ),
+                          Text(
+                            '${AppState.getCurrencySymbol()}${AppState.convertPrice(city.averagePrice.toInt())}/mo',
+                            style: const TextStyle(
+                              fontFamily: 'SFPro', 
+                              color: Colors.white, 
+                              fontSize: 22, 
+                              fontWeight: FontWeight.w900, 
+                              height: 1.0
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 8),
+
+                      // ОПИС ТА РЕЙТИНГ
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              city.description, 
+                              style: TextStyle(
+                                fontFamily: 'SFPro', 
+                                color: Colors.white.withOpacity(0.8), 
+                                fontSize: 12,
+                                height: 1.2
+                              ),
+                              
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _buildStars(city.rating),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -172,20 +189,56 @@ class CityCardMobile extends StatelessWidget {
     );
   }
 
-  Widget _buildStars(double rating) {
-    int starCount = (rating / 20).ceil();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(5, (index) => Icon(
-        index < starCount ? Icons.star : Icons.star_border,
-        color: Colors.white,
-        size: 14,
-      )),
-    );
-  }
-}
+Widget _buildStars(double ratingFromDb) {
+  // 1. Конвертуємо 100-бальний рейтинг у 5-зірковий (напр. 88 / 20 = 4.4)
+  double starValue = ratingFromDb / 20; 
 
-// --- НОВИЙ ДОПОМІЖНИЙ ВІДЖЕТ З АНІМАЦІЄЮ ---
+  // 2. Визначаємо кількість цілих зірок
+  int fullStars = starValue.floor(); 
+  
+  // 3. Визначаємо, чи малювати половинку (якщо залишок від 0.25 до 0.75)
+  double fractionalPart = starValue - fullStars;
+  bool hasHalfStar = fractionalPart >= 0.25 && fractionalPart < 0.75;
+  
+  // 4. Якщо залишок дуже великий (>= 0.75), то зараховуємо це як ще одну повну зірку
+  if (fractionalPart >= 0.75) {
+    fullStars++;
+    hasHalfStar = false;
+  }
+
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(5, (index) {
+          if (index < fullStars) {
+            // Повна золота зірка
+            return const Icon(Icons.star_rounded, color: Color(0xFFE8C872), size: 14);
+          } else if (index == fullStars && hasHalfStar) {
+            // Половинка золотої зірки
+            return const Icon(Icons.star_half_rounded, color: Color(0xFFE8C872), size: 14);
+          } else {
+            // Порожня біла зірка
+            return Icon(Icons.star_outline_rounded, color: Colors.white.withOpacity(0.5), size: 14);
+          }
+        }),
+      ),
+      const SizedBox(width: 4),
+      // Текстове число (напр. 4.4) — це найкращий доказ того, що баги немає
+      Text(
+        starValue.toStringAsFixed(1), 
+        style: const TextStyle(
+          fontFamily: 'SFPro', 
+          fontSize: 12, 
+          fontWeight: FontWeight.bold, 
+          color: Colors.white
+        ),
+      ),
+    ],
+  );
+}
+}
 
 class AnimatedStatusIcon extends StatefulWidget {
   final bool isActive;
@@ -218,17 +271,17 @@ class _AnimatedStatusIconState extends State<AnimatedStatusIcon> with SingleTick
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.2), weight: 50),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.2, end: 1.0), weight: 50),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
   void didUpdateWidget(covariant AnimatedStatusIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Якщо статус змінився (наприклад, через БД), граємо анімацію "попу"
     if (widget.isActive != oldWidget.isActive) {
-      _controller.forward().then((_) => _controller.reverse());
+      _controller.forward(from: 0.0);
     }
   }
 
@@ -249,11 +302,11 @@ class _AnimatedStatusIconState extends State<AnimatedStatusIcon> with SingleTick
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: widget.isActive 
-                ? widget.activeColor.withValues(alpha: 0.2) 
-                : Colors.black.withValues(alpha: 0.3),
+                ? widget.activeColor.withOpacity(0.2) 
+                : Colors.black.withOpacity(0.3),
             shape: BoxShape.circle,
             border: Border.all(
-              color: widget.isActive ? widget.activeColor : Colors.white.withValues(alpha: 0.3),
+              color: widget.isActive ? widget.activeColor : Colors.white.withOpacity(0.3),
               width: 1,
             ),
           ),
@@ -264,7 +317,7 @@ class _AnimatedStatusIconState extends State<AnimatedStatusIcon> with SingleTick
               widget.isActive ? widget.activeIcon : widget.inactiveIcon,
               key: ValueKey<bool>(widget.isActive),
               color: widget.isActive ? widget.activeColor : Colors.white,
-              size: 20,
+              size: 18,
             ),
           ),
         ),

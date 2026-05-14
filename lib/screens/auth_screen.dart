@@ -241,7 +241,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         style: TextStyle(fontFamily: 'SFPro', fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4A5556), letterSpacing: 1.5),
                       ),
                       const Text(
-                        'TRAVEL & DISCOVER',
+                        'YOUR RELOCATION COMPANION',
                         style: TextStyle(fontFamily: 'SFPro', fontSize: 12, color: Colors.grey, letterSpacing: 2.0),
                       ),
                       const SizedBox(height: 30),
@@ -331,7 +331,7 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Ready to travel and discover?',
+            'Ready to relocation?',
             textAlign: TextAlign.center,
             style: TextStyle(fontFamily: 'SFPro', fontSize: 13, color: Colors.grey.shade600),
           ),

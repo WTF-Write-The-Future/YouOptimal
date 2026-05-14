@@ -5,8 +5,14 @@ class City {
   final String image;
   final double averagePrice;
   final double rating;
+  final String description;
+  final String? full_description; // Твоє нове поле
+
+  // Основні метрики
+  final double internetSpeed;
+  final double safetyIndex;
   
-  // ВСІ метрики з БД
+  // Додаткові метрики
   final double? temperature;
   final double? airQualityIndex;
   final double? atmosphericPressure;
@@ -16,8 +22,6 @@ class City {
   final double? rentHouse;
   final double? taxiPrice;
   final double? publicTransportPrice;
-  final double? internetSpeed;
-  final double? safetyIndex;
 
   City({
     required this.id,
@@ -26,6 +30,10 @@ class City {
     required this.image,
     required this.averagePrice,
     required this.rating,
+    required this.description,
+    required this.internetSpeed,
+    required this.safetyIndex,
+    this.full_description, // Поле додано в конструктор
     this.temperature,
     this.airQualityIndex,
     this.atmosphericPressure,
@@ -35,11 +43,10 @@ class City {
     this.rentHouse,
     this.taxiPrice,
     this.publicTransportPrice,
-    this.internetSpeed,
-    this.safetyIndex,
   });
 
   factory City.fromJson(Map<String, dynamic> json) {
+    // Дістаємо дані з вкладеного списку citymetrics
     final metricsList = json['citymetrics'] as List<dynamic>?;
     final metrics = (metricsList != null && metricsList.isNotEmpty) 
         ? metricsList.first as Map<String, dynamic> 
@@ -52,8 +59,16 @@ class City {
       image: json['photo_url']?.toString() ?? '',
       averagePrice: (json['avg_cost'] as num?)?.toDouble() ?? 0.0,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      description: json['description']?.toString() ?? 'No description available.',
       
-      // Тягнемо ВСІ метрики
+      // ВИПРАВЛЕНО: замість map['full_description'] пишемо json['full_description']
+      full_description: json['full_description']?.toString(), 
+      
+      internetSpeed: (metrics?['internet_speed'] as num?)?.toDouble() ?? 
+                     (json['internet_speed'] as num?)?.toDouble() ?? 0.0,
+      safetyIndex: (metrics?['safety_index'] as num?)?.toDouble() ?? 
+                   (json['safety_index'] as num?)?.toDouble() ?? 0.0,
+
       temperature: (metrics?['temperature'] as num?)?.toDouble(),
       airQualityIndex: (metrics?['air_quality_index'] as num?)?.toDouble(),
       atmosphericPressure: (metrics?['atmospheric_pressure'] as num?)?.toDouble(),
@@ -63,8 +78,6 @@ class City {
       rentHouse: (metrics?['rent_house'] as num?)?.toDouble(),
       taxiPrice: (metrics?['taxi_price'] as num?)?.toDouble(),
       publicTransportPrice: (metrics?['public_transport_price'] as num?)?.toDouble(),
-      internetSpeed: (metrics?['internet_speed'] as num?)?.toDouble(),
-      safetyIndex: (metrics?['safety_index'] as num?)?.toDouble(),
     );
   }
 }

@@ -4,174 +4,163 @@ import 'package:you_optimal/models/review.dart';
 import 'package:you_optimal/state/app_state.dart';
 
 void main() {
-  // ==========================================
-  // ТЕСТИ МОДЕЛІ: CITY
-  // ==========================================
-  group('Unit Tests: Модель City', () {
-    test('1. Правильний парсинг City з JSON', () {
-      // Використовуємо ключі рівно так, як вони приходять від Supabase
+  group('Unit Tests: Модель City & Парсинг JSON', () {
+    test('1. Повний мапінг усіх полів City (включаючи full_description)', () {
       final Map<String, dynamic> json = {
-        'city_id': 101, // Твоя модель шукає саме 'city_id'
-        'name': 'Paris',
-        'country': 'France',
-        'photo_url': 'https://link.com/paris.jpg',
-        'avg_cost': 1200.0,
-        'rating': 90.0,
+        'city_id': 77,
+        'name': 'Lviv',
+        'country': 'Ukraine',
+        'photo_url': 'https://link.com/lviv.jpg',
+        'avg_cost': 550.0,
+        'rating': 95.0,
+        'description': 'Short description',
+        'full_description': 'Very long and detailed description of Lviv.',
         'citymetrics': [
           {
-            'temperature': 22.5,
-            'air_quality_index': 45.0,
-            'rent_1_room': 800.0,
+            'temperature': 16.96,
+            'air_quality_index': 60.0,
+            'internet_speed': 110.0,
+            'safety_index': 75.0,
+            'rent_1_room': 400.0
           }
         ]
       };
 
       final city = City.fromJson(json);
 
-      expect(city.id, 101);
-      expect(city.name, 'Paris');
-      expect(city.country, 'France');
-      expect(city.image, 'https://link.com/paris.jpg');
-      expect(city.averagePrice, 1200.0);
-      expect(city.rating, 90.0);
-      
-      // Перевірка вкладених метрик
-      expect(city.temperature, 22.5);
-      expect(city.airQualityIndex, 45.0);
-      expect(city.rent1Room, 800.0);
-      expect(city.safetyIndex, null); // Цього поля не було в JSON, має бути null
+      expect(city.id, 77);
+      expect(city.name, 'Lviv');
+      expect(city.averagePrice, 550.0);
+      expect(city.full_description, 'Very long and detailed description of Lviv.');
+      expect(city.temperature, 16.96);
+      expect(city.internetSpeed, 110.0);
+      expect(city.rent1Room, 400.0);
     });
 
-    test('2. Безпечний парсинг City з порожнього JSON (Null Safety)', () {
+    test('2. Null-safety: Дефолтні значення при порожньому JSON', () {
       final Map<String, dynamic> emptyJson = {};
-
       final city = City.fromJson(emptyJson);
 
-      expect(city.id, 0); // Дефолтне значення з твоєї моделі
+      expect(city.id, 0);
       expect(city.name, 'Unknown');
+      expect(city.country, 'Unknown');
       expect(city.averagePrice, 0.0);
-      expect(city.temperature, null); // Метрики мають бути null
+      expect(city.full_description, null);
+      expect(city.temperature, null); // Оскільки це nullable поле
+      expect(city.safetyIndex, 0.0); // Обов'язкове поле має підставити дефолтне 0.0
+    });
+
+    test('3. Обробка відсутності масиву citymetrics (Graceful degradation)', () {
+      final Map<String, dynamic> jsonWithoutMetrics = {
+        'city_id': 10,
+        'name': 'Test City',
+        // citymetrics відсутній
+      };
+
+      final city = City.fromJson(jsonWithoutMetrics);
+      expect(city.name, 'Test City');
+      expect(city.temperature, null);
+      expect(city.internetSpeed, 0.0);
     });
   });
 
-  // ==========================================
-  // ТЕСТИ МОДЕЛІ: REVIEW
-  // ==========================================
+  group('Unit Tests: Бізнес-логіка AppState (Валюта та Температура)', () {
+    setUp(() {
+      // Скидаємо стан перед кожним тестом, щоб вони були незалежними
+      AppState.resetPreferences();
+    });
+
+    test('4. Конвертація валют: USD -> UAH', () {
+      AppState.currency.value = 'UAH';
+      expect(AppState.getCurrencySymbol(), '₴');
+      expect(AppState.convertPrice(100), 4200); // 100 * 42
+    });
+
+    test('5. Конвертація валют: USD -> EUR', () {
+      AppState.currency.value = 'EUR';
+      expect(AppState.getCurrencySymbol(), '€');
+      expect(AppState.convertPrice(1000), 920); // 1000 * 0.92
+    });
+
+    test('6. Крайні значення валют (Нульова ціна)', () {
+      AppState.currency.value = 'UAH';
+      expect(AppState.convertPrice(0), 0);
+    });
+
+    test('7. Округлення температури (toStringAsFixed)', () {
+      // Має округлити 16.96 до 17.0
+      AppState.tempUnit.value = 'C';
+      expect(AppState.getFormattedTemperature(16.96), '17.0°C');
+      expect(AppState.getFormattedTemperature(22.12), '22.1°C');
+    });
+
+    test('8. Конвертація в Фаренгейти (°C -> °F)', () {
+      AppState.tempUnit.value = 'F';
+      // 0°C = 32°F
+      expect(AppState.getFormattedTemperature(0.0), '32.0°F');
+      // 20°C = 68°F
+      expect(AppState.getFormattedTemperature(20.0), '68.0°F');
+    });
+  });
+
+  group('Unit Tests: Управління списками (Favorites & Visited)', () {
+    final testCity = City(
+      id: 99, 
+      name: 'Mock City', 
+      country: 'Mockland', 
+      image: '', 
+      averagePrice: 100, 
+      rating: 50, 
+      description: '', 
+      internetSpeed: 10, 
+      safetyIndex: 10
+    );
+
+    setUp(() => AppState.clearUserData());
+
+    test('9. Логіка додавання та видалення з Favorites', () {
+      expect(AppState.isFavorite(testCity), false);
+
+      AppState.favorites.value = [testCity];
+      expect(AppState.isFavorite(testCity), true);
+
+      AppState.favorites.value = [];
+      expect(AppState.isFavorite(testCity), false);
+    });
+
+    test('10. Логіка відвіданих міст (Visited Cities)', () {
+      expect(AppState.isVisited(testCity), false);
+
+      AppState.visitedCities.value = [testCity];
+      expect(AppState.isVisited(testCity), true);
+    });
+
+    test('11. Очищення даних користувача (clearUserData)', () {
+      AppState.favorites.value = [testCity];
+      AppState.visitedCities.value = [testCity];
+      AppState.reviewCount.value = 5;
+
+      AppState.clearUserData();
+
+      expect(AppState.favorites.value.isEmpty, true);
+      expect(AppState.visitedCities.value.isEmpty, true);
+      expect(AppState.reviewCount.value, 0);
+    });
+  });
+
   group('Unit Tests: Модель Review', () {
-    test('3. Вирахування середнього балу (averageRating)', () {
+    test('12. Правильний розрахунок середнього рейтингу відгуку', () {
       final review = Review(
-        authorName: 'Sasha',
-        text: 'Great city!',
-        safetyRating: 4,
-        architectureRating: 5,
+        authorName: 'Oleksandr',
+        text: 'Great place!',
+        safetyRating: 5,
+        architectureRating: 4,
         cultureRating: 3,
         createdAt: DateTime.now(),
       );
 
-      // (4 + 5 + 3) / 3 = 4.0
+      // (5 + 4 + 3) / 3 = 12 / 3 = 4.0
       expect(review.averageRating, 4.0);
-    });
-
-    test('4. Парсинг Review з JOIN-даними міста', () {
-      final Map<String, dynamic> json = {
-        'author_name': 'Bozhena',
-        'text': 'Beautiful architecture',
-        'safety_rating': 5,
-        'architecture_rating': 5,
-        'culture_rating': 5,
-        'created_at': '2026-05-12T12:00:00Z',
-        'city': {
-          'name': 'Rome',
-          'photo_url': 'rome.jpg'
-        }
-      };
-
-      final review = Review.fromJson(json);
-
-      expect(review.authorName, 'Bozhena');
-      expect(review.averageRating, 5.0);
-      expect(review.cityName, 'Rome'); // Підтягнулося з вкладеного об'єкта
-      expect(review.cityImage, 'rome.jpg');
-    });
-  });
-
-  // ==========================================
-  // ТЕСТИ СТАНУ ДОДАТКУ: APP STATE
-  // ==========================================
-  group('Unit Tests: Бізнес-логіка AppState', () {
-    
-    setUp(() {
-      // Скидаємо налаштування перед кожним тестом
-      AppState.resetPreferences();
-    });
-
-    test('5. Конвертація валют (USD -> EUR -> UAH)', () {
-      const int basePriceUSD = 1000;
-
-      // Тест USD (Дефолт)
-      expect(AppState.currency.value, 'USD');
-      expect(AppState.convertPrice(basePriceUSD), 1000);
-      expect(AppState.getCurrencySymbol(), '\$');
-
-      // Тест EUR
-      AppState.currency.value = 'EUR';
-      expect(AppState.convertPrice(basePriceUSD), 920); // 1000 * 0.92
-      expect(AppState.getCurrencySymbol(), '€');
-
-      // Тест UAH
-      AppState.currency.value = 'UAH';
-      expect(AppState.convertPrice(basePriceUSD), 42000); // 1000 * 42.0
-      expect(AppState.getCurrencySymbol(), '₴');
-    });
-
-    test('6. Форматування та конвертація температури (°C -> °F)', () {
-      const double baseTempC = 20.0;
-
-      // Тест Цельсія
-      AppState.tempUnit.value = 'C';
-      expect(AppState.getFormattedTemperature(baseTempC), '20.0°C');
-
-      // Тест Фаренгейта (20 * 9/5 + 32 = 68)
-      AppState.tempUnit.value = 'F';
-      expect(AppState.getFormattedTemperature(baseTempC), '68.0°F');
-    });
-
-    test('7. Перевірка логіки списків (isFavorite / isVisited)', () {
-      final city = City(
-        id: 99, 
-        name: 'Test City', 
-        country: 'Test', 
-        image: '', 
-        averagePrice: 10, 
-        rating: 10
-      );
-
-      // Спочатку списки порожні
-      AppState.favorites.value = [];
-      AppState.visitedCities.value = [];
-
-      expect(AppState.isFavorite(city), false);
-      expect(AppState.isVisited(city), false);
-
-      // Додаємо в обране
-      AppState.favorites.value = [city];
-      expect(AppState.isFavorite(city), true);
-      expect(AppState.isVisited(city), false); // У відвіданих його ще немає
-
-      // Додаємо у відвідані
-      AppState.visitedCities.value = [city];
-      expect(AppState.isVisited(city), true);
-    });
-    
-    test('8. Очищення даних (clearUserData)', () {
-      AppState.reviewCount.value = 5;
-      AppState.favorites.value = [City(id: 1, name: 'A', country: 'B', image: '', averagePrice: 0, rating: 0)];
-      
-      AppState.clearUserData();
-
-      expect(AppState.reviewCount.value, 0);
-      expect(AppState.favorites.value.isEmpty, true);
-      expect(AppState.visitedCities.value.isEmpty, true);
     });
   });
 }

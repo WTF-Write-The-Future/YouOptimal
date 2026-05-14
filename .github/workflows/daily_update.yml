@@ -1,0 +1,33 @@
+name: Daily City Metrics Update
+
+on:
+  schedule:
+    # Запуск кожного дня о 00:00 та 12:00 за UTC
+    - cron: '0 0,12 * * *'
+  # Дозволяє запустити скрипт вручну кнопкою на GitHub
+  workflow_dispatch: 
+
+jobs:
+  update-metrics:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install requests supabase python-dotenv
+
+      - name: Run update script
+        env:
+          # GitHub візьме ці дані зі своїх "Secrets", які ми зараз пропишемо
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+        run: python scripts/update_metrics.py

@@ -178,8 +178,11 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
                   runSpacing: 8,
                   alignment: WrapAlignment.center,
                   children: [
-                    if (widget.city.temperature != null) _buildMobileMetricChip(Icons.thermostat, '${widget.city.temperature!.toInt()}°C'),
-                    if (widget.city.airQualityIndex != null) _buildMobileMetricChip(Icons.air, 'Air: ${widget.city.airQualityIndex!.toInt()}'),
+if (widget.city.temperature != null) 
+  _buildMobileMetricChip(
+    Icons.thermostat, 
+    AppState.getFormattedTemperature(widget.city.temperature!.toDouble())
+  ),                    if (widget.city.airQualityIndex != null) _buildMobileMetricChip(Icons.air, 'Air: ${widget.city.airQualityIndex!.toInt()}'),
                     if (widget.city.atmosphericPressure != null) _buildMobileMetricChip(Icons.compress, '${widget.city.atmosphericPressure!.toInt()} hPa'),
                     if (widget.city.rent1Room != null) _buildMobileMetricChip(Icons.apartment, '1-bed: ${AppState.getCurrencySymbol()}${widget.city.rent1Room!.toInt()}'),
                     if (widget.city.rent2Room != null) _buildMobileMetricChip(Icons.grid_view_rounded, '2-bed: ${AppState.getCurrencySymbol()}${widget.city.rent2Room!.toInt()}'),
@@ -195,11 +198,12 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
                 const SizedBox(height: 24),
                 
                 // ABOUT БЛОК
-                _ExpandableAboutSection(
-                  cityName: widget.city.name,
-                  description: '${widget.city.name} is a breathtaking city, famous for its stunning architecture and vibrant energy. It perfectly blends a rich historical past with modern lifestyle, making it one of the most atmospheric places to live.',
-                  bgScreen: Colors.white.withOpacity(0.6),
-                ),
+// ШУКАЙ ЦЕЙ БЛОК:
+_ExpandableAboutSection(
+  cityName: widget.city.name,
+  description: widget.city.full_description ?? widget.city.description, 
+  bgScreen: Colors.white.withOpacity(0.6),
+),
               ],
             ),
           ),
@@ -434,11 +438,11 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
         
         SizedBox(height: isMobile ? 24 : 32),
         
-        _ExpandableAboutSection(
-          cityName: widget.city.name,
-          description: '${widget.city.name} is a breathtaking city, famous for its stunning architecture and vibrant energy. It perfectly blends a rich historical past with modern lifestyle, making it one of the most atmospheric places to live.',
-          bgScreen: bgScreen,
-        ),
+_ExpandableAboutSection(
+  cityName: widget.city.name,
+    description: widget.city.full_description ?? widget.city.description,
+  bgScreen: bgScreen,
+),
       ],
     );
   }
@@ -631,62 +635,108 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
     );
   }
 
-  Widget _buildTitleAndPrice() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                widget.city.name.toUpperCase(), 
-                style: const TextStyle(fontFamily: 'SFPro', fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white, height: 1.1),
+Widget _buildTitleAndPrice() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              widget.city.name.toUpperCase(),
+              style: const TextStyle(
+                fontFamily: 'SFPro',
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                height: 1.1,
               ),
             ),
-            ValueListenableBuilder<List<City>>(
-              valueListenable: AppState.favorites,
-              builder: (context, favorites, child) {
-                bool isFav = AppState.isFavorite(widget.city);
-                return MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () => AppState.toggleFavorite(context, widget.city),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      child: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: bgCard, size: 20),
+          ),
+          Row(
+            children: [
+              // Кнопка VISITED
+              ValueListenableBuilder<List<City>>(
+                valueListenable: AppState.visitedCities,
+                builder: (context, visitedList, _) {
+                  bool isVisited = visitedList.any((c) => c.id == widget.city.id);
+                  return MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => AppState.toggleVisited(context, widget.city),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: Icon(
+                          Icons.check_circle_rounded,
+                          color: isVisited ? const Color(0xFF53D769) : Colors.grey.shade300,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ValueListenableBuilder<String>(
-          valueListenable: AppState.currency,
-          builder: (context, currentCurrency, child) {
-            String price = AppState.convertPrice(widget.city.averagePrice.toInt()).toString();
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6.0, right: 2.0),
-                  child: Text(AppState.getCurrencySymbol(), style: const TextStyle(fontFamily: 'SFPro', fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  );
+                },
+              ),
+              const SizedBox(width: 12),
+              // Кнопка FAVORITE
+              ValueListenableBuilder<List<City>>(
+                valueListenable: AppState.favorites,
+                builder: (context, favList, _) {
+                  bool isFav = AppState.isFavorite(widget.city);
+                  return MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: () => AppState.toggleFavorite(context, widget.city),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: Icon(
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          color: const Color(0xFFC9BA9B),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      // Блок ціни
+      ValueListenableBuilder<String>(
+        valueListenable: AppState.currency,
+        builder: (context, currentCurrency, child) {
+          String price = AppState.convertPrice(widget.city.averagePrice.toInt()).toString();
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                AppState.getCurrencySymbol(),
+                style: const TextStyle(fontFamily: 'SFPro', fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                price,
+                style: const TextStyle(fontFamily: 'SFPro', fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 6.0, left: 4.0),
+                child: Text(
+                  '/ mo',
+                  style: TextStyle(fontFamily: 'SFPro', fontSize: 16, color: Colors.white70, fontWeight: FontWeight.bold),
                 ),
-                Text(price, style: const TextStyle(fontFamily: 'SFPro', fontSize: 48, fontWeight: FontWeight.w900, color: Colors.white, height: 1.0)),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 6.0, left: 4.0),
-                  child: Text('/ mo', style: const TextStyle(fontFamily: 'SFPro', fontSize: 16, color: Colors.white70, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
+              ),
+            ],
+          );
+        },
+      ),
+    ],
+  );
+}
 
   Widget _buildMetricsGrid() {
     return Wrap(
@@ -697,10 +747,11 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
           valueListenable: AppState.tempUnit, 
           builder: (context, _, __) {
             String tempText = 'Temp: N/A';
-            if (widget.city.temperature != null) {
-              tempText = AppState.getFormattedTemperature(widget.city.temperature!.toDouble());
-            }
-            return _buildMetricChip(Icons.wb_sunny_outlined, tempText);
+           if (widget.city.temperature != null) {
+  tempText = AppState.getFormattedTemperature(widget.city.temperature!.toDouble());
+}
+// Використовуй Icons.thermostat_rounded, щоб було як на мобайлі
+return _buildMetricChip(Icons.thermostat_rounded, tempText);
           }
         ),
         _buildMetricChip(Icons.air, widget.city.airQualityIndex != null ? 'AQI: ${widget.city.airQualityIndex}' : 'AQI: N/A'),
@@ -712,6 +763,16 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
         _buildMetricChip(Icons.bedroom_parent_outlined, widget.city.rent3Room != null ? '3-bed: \$${widget.city.rent3Room}' : '3-bed: N/A'),
         _buildMetricChip(Icons.house_outlined, widget.city.rentHouse != null ? 'House: \$${widget.city.rentHouse}' : 'House: N/A'),
         _buildMetricChip(Icons.local_taxi_outlined, widget.city.taxiPrice != null ? 'Taxi: \$${widget.city.taxiPrice}' : 'Taxi: N/A'),
+        _buildMetricChip(
+      Icons.directions_bus_rounded, 
+      widget.city.publicTransportPrice != null ? 'Bus: ${AppState.getCurrencySymbol()}${widget.city.publicTransportPrice}' : 'Bus: N/A'
+    ),
+    
+    // КРАЇНА
+    _buildMetricChip(
+      Icons.public_rounded, 
+      widget.city.country // Просто назва країни
+    ),
       ],
     );
   }
