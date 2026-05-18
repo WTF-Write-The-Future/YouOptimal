@@ -34,7 +34,7 @@ flutter:
   
   assets:
     - assets/
-    - .env  # ДОДАНО: Щоб Flutter бачив файл з ключами
+    - env  # ДОДАНО: Щоб Flutter бачив файл з ключами
 
   fonts:
     - family: DM Serif Text

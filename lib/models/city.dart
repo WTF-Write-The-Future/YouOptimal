@@ -13,7 +13,8 @@ class City {
   final double safetyIndex;
   
   // Додаткові метрики
-  final double? temperature;
+  final double? tempMin;
+  final double? tempMax;
   final double? airQualityIndex;
   final double? atmosphericPressure;
   final double? rent1Room;
@@ -34,8 +35,9 @@ class City {
     required this.internetSpeed,
     required this.safetyIndex,
     this.full_description, // Поле додано в конструктор
-    this.temperature,
     this.airQualityIndex,
+    this.tempMin,
+    this.tempMax,
     this.atmosphericPressure,
     this.rent1Room,
     this.rent2Room,
@@ -69,7 +71,8 @@ class City {
       safetyIndex: (metrics?['safety_index'] as num?)?.toDouble() ?? 
                    (json['safety_index'] as num?)?.toDouble() ?? 0.0,
 
-      temperature: (metrics?['temperature'] as num?)?.toDouble(),
+      tempMin: (metrics?['temp_min'] as num?)?.toDouble(),
+      tempMax: (metrics?['temp_max'] as num?)?.toDouble(),
       airQualityIndex: (metrics?['air_quality_index'] as num?)?.toDouble(),
       atmosphericPressure: (metrics?['atmospheric_pressure'] as num?)?.toDouble(),
       rent1Room: (metrics?['rent_1_room'] as num?)?.toDouble(),

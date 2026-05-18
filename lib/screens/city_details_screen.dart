@@ -178,11 +178,12 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
                   runSpacing: 8,
                   alignment: WrapAlignment.center,
                   children: [
-if (widget.city.temperature != null) 
+if (widget.city.tempMin != null && widget.city.tempMax != null) 
   _buildMobileMetricChip(
     Icons.thermostat, 
-    AppState.getFormattedTemperature(widget.city.temperature!.toDouble())
-  ),                    if (widget.city.airQualityIndex != null) _buildMobileMetricChip(Icons.air, 'Air: ${widget.city.airQualityIndex!.toInt()}'),
+    '${AppState.getFormattedTemperature(widget.city.tempMin!)} / ${AppState.getFormattedTemperature(widget.city.tempMax!)}'
+  ),
+                    if (widget.city.airQualityIndex != null) _buildMobileMetricChip(Icons.air, 'Air: ${widget.city.airQualityIndex!.toInt()}'),
                     if (widget.city.atmosphericPressure != null) _buildMobileMetricChip(Icons.compress, '${widget.city.atmosphericPressure!.toInt()} hPa'),
                     if (widget.city.rent1Room != null) _buildMobileMetricChip(Icons.apartment, '1-bed: ${AppState.getCurrencySymbol()}${widget.city.rent1Room!.toInt()}'),
                     if (widget.city.rent2Room != null) _buildMobileMetricChip(Icons.grid_view_rounded, '2-bed: ${AppState.getCurrencySymbol()}${widget.city.rent2Room!.toInt()}'),
@@ -747,8 +748,17 @@ Widget _buildTitleAndPrice() {
           valueListenable: AppState.tempUnit, 
           builder: (context, _, __) {
             String tempText = 'Temp: N/A';
-           if (widget.city.temperature != null) {
-  tempText = AppState.getFormattedTemperature(widget.city.temperature!.toDouble());
+
+// Перевіряємо, чи існують обидва значення
+if (widget.city.tempMin != null && widget.city.tempMax != null) {
+  // Форматуємо мінімальну температуру (наприклад, "14°C")
+  String minTemp = AppState.getFormattedTemperature(widget.city.tempMin!);
+  
+  // Форматуємо максимальну температуру (наприклад, "24°C")
+  String maxTemp = AppState.getFormattedTemperature(widget.city.tempMax!);
+  
+  // З'єднуємо їх через слеш
+  tempText = '$minTemp / $maxTemp';
 }
 // Використовуй Icons.thermostat_rounded, щоб було як на мобайлі
 return _buildMetricChip(Icons.thermostat_rounded, tempText);

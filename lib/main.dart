@@ -8,7 +8,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await dotenv.load(fileName: ".env");
+    await dotenv.load(fileName: "env");
     print("✅ .env завантажено успішно");
   } catch (e) {
     print("❌ Помилка завантаження .env: $e");

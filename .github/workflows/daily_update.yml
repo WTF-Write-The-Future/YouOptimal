@@ -12,11 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ВИПРАВЛЕНО: оновлено до стабільної v4 версії
       - name: Checkout repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # ВИПРАВЛЕНО: оновлено до стабільної v5 версії для Python
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
@@ -26,7 +28,6 @@ jobs:
 
       - name: Run update script
         env:
-          # GitHub візьме ці дані зі своїх "Secrets", які ми зараз пропишемо
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}

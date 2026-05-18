@@ -4,7 +4,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 
 # Завантажуємо ключі з файлу .env
-load_dotenv()
+load_dotenv("env")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
@@ -15,15 +15,12 @@ if not all([SUPABASE_URL, SUPABASE_KEY, WEATHER_API_KEY]):
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ... далі йде твоя функція get_weather_and_aqi та update_cities
-
 def get_weather_and_aqi(city_name):
     try:
         # 1. Отримуємо координати міста
         geo_url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name}&limit=1&appid={WEATHER_API_KEY}"
         geo_res = requests.get(geo_url).json()
         
-        # ДОДАНО: Перевіряємо, чи не повернув сервер помилку (наприклад, 401 Unauthorized)
         if isinstance(geo_res, dict) and "message" in geo_res:
             print(f"Відмова від OpenWeather: {geo_res['message']}")
             return None
@@ -32,11 +29,24 @@ def get_weather_and_aqi(city_name):
         
         lat, lon = geo_res[0]['lat'], geo_res[0]['lon']
 
-        # 2. Отримуємо погоду та тиск
-        w_url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}&units=metric"
-        w_data = requests.get(w_url).json()
+        # 2. Отримуємо прогноз погоди на 5 днів (інтервал 3 години) замість поточного /weather
+        forecast_url = f"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}&units=metric"
+        f_data = requests.get(forecast_url).json()
         
-        # 3. Отримуємо якість повітря
+        if 'list' not in f_data or not f_data['list']:
+            return None
+
+        # Беремо перші 8 записів (8 * 3 години = 24 години)
+        next_24_hours = f_data['list'][:8]
+
+        # Вираховуємо мінімальну та максимальну температуру за добу
+        temp_min = min(item['main']['temp_min'] for item in next_24_hours)
+        temp_max = max(item['main']['temp_max'] for item in next_24_hours)
+        
+        # Тиск беремо з поточного слоту прогнозу
+        pressure = next_24_hours[0]['main']['pressure']
+
+        # 3. Отримуємо якість повітря (залишається без змін)
         aqi_url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}"
         aqi_data = requests.get(aqi_url).json()
 
@@ -44,8 +54,9 @@ def get_weather_and_aqi(city_name):
         converted_aqi = 100 - ((raw_aqi - 1) * 20) 
 
         return {
-            "temp": w_data['main']['temp'],
-            "press": w_data['main']['pressure'],
+            "temp_min": round(temp_min, 1),
+            "temp_max": round(temp_max, 1),
+            "press": pressure,
             "aqi": converted_aqi
         }
     except Exception as e:
@@ -60,15 +71,16 @@ def update_cities():
         data = get_weather_and_aqi(city['name'])
         
         if data:
-            # Оновлюємо дані в таблиці citymetrics
+            # Оновлюємо дані в таблиці citymetrics з новими полями temp_min та temp_max
             supabase.table("citymetrics").update({
-                "temperature": data['temp'],
+                "temp_min": data['temp_min'],
+                "temp_max": data['temp_max'],
                 "atmospheric_pressure": data['press'],
                 "air_quality_index": data['aqi']
             }).eq("city_id", city['city_id']).execute()
-            print(f"✅ {city['name']} успішно оновлено! (Температура: {data['temp']}°C, Тиск: {data['press']}hPa, AQI: {data['aqi']})")
+            print(f"✅ {city['name']} оновлено! (Мін: {data['temp_min']}°C, Макс: {data['temp_max']}°C, Тиск: {data['press']} hPa, AQI: {data['aqi']})")
         else:
-             print(f"❌ Не вдалося знайти дані для {city['name']}")
+            print(f"❌ Не вдалося знайти дані для {city['name']}")
              
     print("\n🎉 Всі міста успішно оновлено реальними даними!")
 
