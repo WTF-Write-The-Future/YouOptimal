@@ -5,7 +5,7 @@ import 'package:you_optimal/state/app_state.dart';
 
 void main() {
   group('Unit Tests: Модель City & Парсинг JSON', () {
-    test('1. Повний мапінг усіх полів City (включаючи full_description)', () {
+    test('1. Повний мапінг усіх полів City (включаючи temp_min та temp_max)', () {
       final Map<String, dynamic> json = {
         'city_id': 77,
         'name': 'Lviv',
@@ -17,11 +17,14 @@ void main() {
         'full_description': 'Very long and detailed description of Lviv.',
         'citymetrics': [
           {
-            'temperature': 16.96,
+            // ВИПРАВЛЕНО: Нова структура полів погоди з бази даних
+            'temp_min': 12.3,
+            'temp_max': 22.8,
             'air_quality_index': 60.0,
             'internet_speed': 110.0,
             'safety_index': 75.0,
-            'rent_1_room': 400.0
+            'rent_1_room': 400.0,
+            'atmospheric_pressure': 1012.0
           }
         ]
       };
@@ -32,7 +35,9 @@ void main() {
       expect(city.name, 'Lviv');
       expect(city.averagePrice, 550.0);
       expect(city.full_description, 'Very long and detailed description of Lviv.');
-      expect(city.temperature, 16.96);
+      // Перевірка нових полів прогнозу
+      expect(city.tempMin, 12.3);
+      expect(city.tempMax, 22.8);
       expect(city.internetSpeed, 110.0);
       expect(city.rent1Room, 400.0);
     });
@@ -46,40 +51,42 @@ void main() {
       expect(city.country, 'Unknown');
       expect(city.averagePrice, 0.0);
       expect(city.full_description, null);
-      expect(city.temperature, null); // Оскільки це nullable поле
-      expect(city.safetyIndex, 0.0); // Обов'язкове поле має підставити дефолтне 0.0
+      // ВИПРАВЛЕНО: Обидва поля мають безпечно повертати null
+      expect(city.tempMin, null);
+      expect(city.tempMax, null);
+      expect(city.safetyIndex, 0.0);
     });
 
     test('3. Обробка відсутності масиву citymetrics (Graceful degradation)', () {
       final Map<String, dynamic> jsonWithoutMetrics = {
         'city_id': 10,
         'name': 'Test City',
-        // citymetrics відсутній
       };
 
       final city = City.fromJson(jsonWithoutMetrics);
       expect(city.name, 'Test City');
-      expect(city.temperature, null);
+      // ВИПРАВЛЕНО: Перевірка для обох nullable полів
+      expect(city.tempMin, null);
+      expect(city.tempMax, null);
       expect(city.internetSpeed, 0.0);
     });
   });
 
   group('Unit Tests: Бізнес-логіка AppState (Валюта та Температура)', () {
     setUp(() {
-      // Скидаємо стан перед кожним тестом, щоб вони були незалежними
       AppState.resetPreferences();
     });
 
     test('4. Конвертація валют: USD -> UAH', () {
       AppState.currency.value = 'UAH';
       expect(AppState.getCurrencySymbol(), '₴');
-      expect(AppState.convertPrice(100), 4200); // 100 * 42
+      expect(AppState.convertPrice(100), 4200);
     });
 
     test('5. Конвертація валют: USD -> EUR', () {
       AppState.currency.value = 'EUR';
       expect(AppState.getCurrencySymbol(), '€');
-      expect(AppState.convertPrice(1000), 920); // 1000 * 0.92
+      expect(AppState.convertPrice(1000), 920);
     });
 
     test('6. Крайні значення валют (Нульова ціна)', () {
@@ -87,23 +94,26 @@ void main() {
       expect(AppState.convertPrice(0), 0);
     });
 
-    test('7. Округлення температури (toStringAsFixed)', () {
-      // Має округлити 16.96 до 17.0
+    test('7. Округлення мінімальної та максимальної температури (toStringAsFixed)', () {
       AppState.tempUnit.value = 'C';
-      expect(AppState.getFormattedTemperature(16.96), '17.0°C');
-      expect(AppState.getFormattedTemperature(22.12), '22.1°C');
+      // Перевіряємо округлення для країв добового діапазону (наприклад, 12.34 та 22.86)
+      expect(AppState.getFormattedTemperature(12.34), '12.3°C');
+      expect(AppState.getFormattedTemperature(22.86), '22.9°C');
     });
 
-    test('8. Конвертація в Фаренгейти (°C -> °F)', () {
+    test('8. Конвертація в Фаренгейти (°C -> °F) для всього діапазону', () {
       AppState.tempUnit.value = 'F';
-      // 0°C = 32°F
+      
+      // Тест нижньої нічної межі (наприклад, 0°C -> 32°F)
       expect(AppState.getFormattedTemperature(0.0), '32.0°F');
-      // 20°C = 68°F
+      
+      // Тест верхньої денної межі (наприклад, 20°C -> 68°F)
       expect(AppState.getFormattedTemperature(20.0), '68.0°F');
     });
   });
 
   group('Unit Tests: Управління списками (Favorites & Visited)', () {
+    // ВИПРАВЛЕНО: Оновлено ініціалізацію Mock-об'єкта з урахуванням нових полів конструктора
     final testCity = City(
       id: 99, 
       name: 'Mock City', 
@@ -113,7 +123,9 @@ void main() {
       rating: 50, 
       description: '', 
       internetSpeed: 10, 
-      safetyIndex: 10
+      safetyIndex: 10,
+      tempMin: 10.0,
+      tempMax: 20.0,
     );
 
     setUp(() => AppState.clearUserData());
@@ -159,7 +171,6 @@ void main() {
         createdAt: DateTime.now(),
       );
 
-      // (5 + 4 + 3) / 3 = 12 / 3 = 4.0
       expect(review.averageRating, 4.0);
     });
   });
