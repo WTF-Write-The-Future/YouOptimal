@@ -14,7 +14,6 @@ class CityCardFull extends StatefulWidget {
   State<CityCardFull> createState() => _CityCardFullState();
 }
 
-// ЗМІНЕНО: TickerProviderStateMixin дозволяє створювати БАГАТО анімацій
 class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMixin {
   // 1. Контролер для кнопки "Відвідано"
   late AnimationController _visitedController;
@@ -49,7 +48,6 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
 
   @override
   void dispose() {
-    // Не забуваємо очищати ОБИДВА контролери
     _visitedController.dispose();
     _favController.dispose();
     super.dispose();
@@ -72,15 +70,11 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
         borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
-            // ФОНОВЕ ЗОБРАЖЕННЯ
-            // ФОНОВЕ ЗОБРАЖЕННЯ З HERO АНІМАЦІЄЮ
-            // ФОНОВЕ ЗОБРАЖЕННЯ З HERO АНІМАЦІЄЮ
             Positioned.fill(
               child: Hero(
-                tag: 'hero-city-image-${widget.city.id}', // Унікальний тег для цього міста
-                // ВИДАЛЕНО flightShuttleBuilder, який ламав анімацію
+                tag: 'hero-city-image-${widget.city.id}', 
                 child: Material(
-                  type: MaterialType.transparency, // МАГІЯ ДЛЯ ПЛАВНОСТІ
+                  type: MaterialType.transparency, 
                   child: widget.city.image.isNotEmpty && widget.city.image.length > 10
                     ? Image.network(widget.city.image, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholder())
                     : _buildPlaceholder(),
@@ -89,7 +83,6 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
             ),
   
             
-            // ТЕМНИЙ ГРАДІЄНТ ЗНИЗУ
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
@@ -103,7 +96,7 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
               ),
             ),
 
-            // КНОПКИ (Відвідане + Обране) у правому верхньому куті
+            // КНОПКИ (Відвідане + Обране) 
             Positioned(
               top: 16,
               right: 16,
@@ -123,13 +116,12 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
                           GestureDetector(
                             onTap: () {
                               AppState.toggleVisited(context, widget.city);
-                              // Запускаємо ТІЛЬКИ анімацію для цієї кнопки
                               _visitedController.forward().then((_) => _visitedController.reverse());
                             },
                             child: AnimatedBuilder(
                               animation: _visitedAnimation,
                               builder: (context, child) => Transform.scale(
-                                scale: _visitedAnimation.value, // Слухаємо тільки свій контролер
+                                scale: _visitedAnimation.value,
                                 child: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.25), shape: BoxShape.circle),
@@ -148,13 +140,12 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
                           GestureDetector(
                             onTap: () {
                               AppState.toggleFavorite(context, widget.city);
-                              // Запускаємо ТІЛЬКИ анімацію для сердечка
                               _favController.forward().then((_) => _favController.reverse());
                             },
                             child: AnimatedBuilder(
                               animation: _favAnimation,
                               builder: (context, child) => Transform.scale(
-                                scale: _favAnimation.value, // Слухаємо тільки свій контролер
+                                scale: _favAnimation.value, 
                                 child: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.25), shape: BoxShape.circle),
@@ -188,7 +179,7 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
                      // НАЗВА МІСТА
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.only(right: 8.0), // Додаємо відступ від ціни
+                          padding: const EdgeInsets.only(right: 8.0), 
                           child: FittedBox(
                             fit: BoxFit.scaleDown, // Автоматично зменшує шрифт, якщо не влазить
                             alignment: Alignment.centerLeft,
@@ -197,7 +188,7 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
                               style: const TextStyle(
                                 fontFamily: 'SFPro', 
                                 color: Colors.white, 
-                                fontSize: 36, // Це максимальний розмір, FittedBox його зменшить за потреби
+                                fontSize: 36, 
                                 fontWeight: FontWeight.w900, 
                                 height: 1.0, 
                                 letterSpacing: 0,
@@ -212,7 +203,7 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
                       ValueListenableBuilder<String>(
                         valueListenable: AppState.currency,
                         builder: (context, currentCurrency, child) {
-                          String price = AppState.convertPrice(widget.city.averagePrice.toInt()).toString();
+String price = AppState.convertPrice(widget.city.averagePrice).toStringAsFixed(0);
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -244,7 +235,7 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
                   
                   // ОПИС
                  Text(
-  widget.city.description, // ТЕПЕР ВИКОРИСТОВУЄМО РЕАЛЬНИЙ ОПИС
+  widget.city.description, 
   style: const TextStyle(
     fontFamily: 'SFPro', 
     color: Colors.white, 
@@ -297,17 +288,13 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
   }
 
  Widget _buildStars(double ratingFromDb) {
-  // 1. Конвертуємо 100-бальний рейтинг у 5-зірковий (напр. 88 / 20 = 4.4)
   double starValue = ratingFromDb / 20; 
 
-  // 2. Визначаємо кількість цілих зірок
   int fullStars = starValue.floor(); 
   
-  // 3. Визначаємо, чи малювати половинку (якщо залишок від 0.25 до 0.75)
   double fractionalPart = starValue - fullStars;
   bool hasHalfStar = fractionalPart >= 0.25 && fractionalPart < 0.75;
   
-  // 4. Якщо залишок дуже великий (>= 0.75), то зараховуємо це як ще одну повну зірку
   if (fractionalPart >= 0.75) {
     fullStars++;
     hasHalfStar = false;
@@ -320,19 +307,15 @@ class _CityCardFullState extends State<CityCardFull> with TickerProviderStateMix
         mainAxisSize: MainAxisSize.min,
         children: List.generate(5, (index) {
           if (index < fullStars) {
-            // Повна золота зірка
             return const Icon(Icons.star_rounded, color: Color(0xFFE8C872), size: 14);
           } else if (index == fullStars && hasHalfStar) {
-            // Половинка золотої зірки
             return const Icon(Icons.star_half_rounded, color: Color(0xFFE8C872), size: 14);
           } else {
-            // Порожня біла зірка
             return Icon(Icons.star_outline_rounded, color: Colors.white.withOpacity(0.5), size: 14);
           }
         }),
       ),
       const SizedBox(width: 4),
-      // Текстове число (напр. 4.4) — це найкращий доказ того, що баги немає
       Text(
         starValue.toStringAsFixed(1), 
         style: const TextStyle(

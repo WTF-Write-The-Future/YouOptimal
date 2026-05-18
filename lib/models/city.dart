@@ -6,8 +6,8 @@ class City {
   final double averagePrice;
   final double rating;
   final String description;
-  final String? full_description; // Твоє нове поле
-
+  final String? full_description;
+  
   // Основні метрики
   final double internetSpeed;
   final double safetyIndex;
@@ -34,7 +34,7 @@ class City {
     required this.description,
     required this.internetSpeed,
     required this.safetyIndex,
-    this.full_description, // Поле додано в конструктор
+    this.full_description,
     this.airQualityIndex,
     this.tempMin,
     this.tempMax,
@@ -48,7 +48,6 @@ class City {
   });
 
   factory City.fromJson(Map<String, dynamic> json) {
-    // Дістаємо дані з вкладеного списку citymetrics
     final metricsList = json['citymetrics'] as List<dynamic>?;
     final metrics = (metricsList != null && metricsList.isNotEmpty) 
         ? metricsList.first as Map<String, dynamic> 
@@ -63,7 +62,6 @@ class City {
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       description: json['description']?.toString() ?? 'No description available.',
       
-      // ВИПРАВЛЕНО: замість map['full_description'] пишемо json['full_description']
       full_description: json['full_description']?.toString(), 
       
       internetSpeed: (metrics?['internet_speed'] as num?)?.toDouble() ?? 

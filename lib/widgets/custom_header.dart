@@ -96,7 +96,6 @@ class _MainAppHeaderState extends State<MainAppHeader> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  // Плавний перехід на головну
                   Navigator.pushAndRemoveUntil(
                     context,
                     PremiumTransition(page: const HomeScreen()),
@@ -126,7 +125,6 @@ class _MainAppHeaderState extends State<MainAppHeader> {
                       cursor: SystemMouseCursors.click,
                       child: GestureDetector(
                         onTap: () {
-                          // Плавний перехід на авторизацію
                           Navigator.push(context, PremiumTransition(page: const AuthScreen()));
 
                         },
@@ -137,7 +135,6 @@ class _MainAppHeaderState extends State<MainAppHeader> {
                     
                     ElevatedButton(
                       onPressed: () {
-                        // Плавний перехід на реєстрацію
                         Navigator.push(context, PremiumTransition(page: const AuthScreen(isLoginMode: false))); 
                       },
                       style: ElevatedButton.styleFrom(
@@ -153,7 +150,6 @@ class _MainAppHeaderState extends State<MainAppHeader> {
                 ],
               )
             else
-              // ГАМБУРГЕР-МЕНЮ ДЛЯ МОБІЛОК
               IconButton(
                 icon: const Icon(Icons.menu, color: Colors.black87, size: 24),
                 onPressed: () => _showMobileMenu(context),
@@ -255,7 +251,6 @@ class _MainAppHeaderState extends State<MainAppHeader> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        // Плавний перехід для текстових посилань
         onTap: () => Navigator.push(context, PremiumTransition(page: destination)),
         child: Row(
           children: [
@@ -271,14 +266,13 @@ class _MainAppHeaderState extends State<MainAppHeader> {
  void _showMobileMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // <--- ДОДАНО: Дозволяє меню займати більше місця по висоті
+      isScrollControlled: true, 
       backgroundColor: const Color(0xFFF7F3E8),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
-          // === ДОДАНО SingleChildScrollView ===
           child: SingleChildScrollView( 
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
@@ -365,7 +359,6 @@ class _MainAppHeaderState extends State<MainAppHeader> {
     return InkWell(
       onTap: () {
         Navigator.pop(context); 
-        // Плавний перехід для мобільного меню
         Navigator.push(context, PremiumTransition(page: destination));
       },
       child: Padding(

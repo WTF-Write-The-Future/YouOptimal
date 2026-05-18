@@ -143,7 +143,7 @@ class CityCardMobile extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${AppState.getCurrencySymbol()}${AppState.convertPrice(city.averagePrice.toInt())}/mo',
+                            '${AppState.getCurrencySymbol()}${AppState.convertPrice(city.averagePrice.toDouble())}/mo',
                             style: const TextStyle(
                               fontFamily: 'SFPro', 
                               color: Colors.white, 
@@ -190,17 +190,13 @@ class CityCardMobile extends StatelessWidget {
   }
 
 Widget _buildStars(double ratingFromDb) {
-  // 1. Конвертуємо 100-бальний рейтинг у 5-зірковий (напр. 88 / 20 = 4.4)
   double starValue = ratingFromDb / 20; 
 
-  // 2. Визначаємо кількість цілих зірок
   int fullStars = starValue.floor(); 
   
-  // 3. Визначаємо, чи малювати половинку (якщо залишок від 0.25 до 0.75)
   double fractionalPart = starValue - fullStars;
   bool hasHalfStar = fractionalPart >= 0.25 && fractionalPart < 0.75;
   
-  // 4. Якщо залишок дуже великий (>= 0.75), то зараховуємо це як ще одну повну зірку
   if (fractionalPart >= 0.75) {
     fullStars++;
     hasHalfStar = false;
@@ -213,19 +209,15 @@ Widget _buildStars(double ratingFromDb) {
         mainAxisSize: MainAxisSize.min,
         children: List.generate(5, (index) {
           if (index < fullStars) {
-            // Повна золота зірка
             return const Icon(Icons.star_rounded, color: Color(0xFFE8C872), size: 14);
           } else if (index == fullStars && hasHalfStar) {
-            // Половинка золотої зірки
             return const Icon(Icons.star_half_rounded, color: Color(0xFFE8C872), size: 14);
           } else {
-            // Порожня біла зірка
             return Icon(Icons.star_outline_rounded, color: Colors.white.withOpacity(0.5), size: 14);
           }
         }),
       ),
       const SizedBox(width: 4),
-      // Текстове число (напр. 4.4) — це найкращий доказ того, що баги немає
       Text(
         starValue.toStringAsFixed(1), 
         style: const TextStyle(

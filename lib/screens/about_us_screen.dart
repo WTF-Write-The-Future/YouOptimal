@@ -165,7 +165,6 @@ class AboutUsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildTechItem('Python', 'https://cdn-icons-png.flaticon.com/512/5968/5968350.png', isNetwork: true),
           const SizedBox(height: 16),
-          // ЗМІНЕНО ТУТ: Замість FastAPI тепер Supabase
           _buildTechItem('Supabase', '', isSupabase: true),
           const SizedBox(height: 16),
           _buildTechItem('Flutter', '', isFlutter: true),
@@ -174,11 +173,9 @@ class AboutUsScreen extends StatelessWidget {
     );
   }
 
-  // ЗМІНЕНО ТУТ: Додано параметр isSupabase
   Widget _buildTechItem(String name, String url, {bool isNetwork = false, bool isSupabase = false, bool isFlutter = false}) {
     Widget icon;
     if (isSupabase) {
-      // Ідеально симетрична кругла іконка бази даних у фірмовому кольорі Supabase
       icon = Container(
         width: 26, 
         height: 26, 
@@ -224,7 +221,7 @@ class AboutUsScreen extends StatelessWidget {
             child: child,
           ),
           
-          // === ТЕПЕР ТУТ ІДЕАЛЬНО ЧИСТА ДУГА БЕЗ РИСОК ===
+          // === ДУГА ===
           Positioned(
             bottom: 24,
             right: 24,
@@ -239,20 +236,17 @@ class AboutUsScreen extends StatelessWidget {
   }
 }
 
-// Спеціальний клас для малювання тільки дуги
 class _CornerArcPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFF2B3233)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5 // Товщина лінії
+      ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
 
     final path = Path();
-    // Починаємо з нижнього лівого кута уявної області 20х20
     path.moveTo(0, size.height);
-    // Малюємо дугу до верхнього правого кута
     path.arcToPoint(
       Offset(size.width, 0),
       radius: Radius.circular(size.width),

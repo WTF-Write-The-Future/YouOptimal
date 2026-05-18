@@ -25,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   String _currentSort = 'Default'; 
   
-  // Нові змінні для фільтрів
   double _minSafety = 0.0;
   double _minInternet = 0.0;
   String? _selectedCountry = 'All';
@@ -97,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // === ВИПРАВЛЕНИЙ ТА ОБ'ЄДНАНИЙ МЕТОД ФІЛЬТРАЦІЇ ===
+  // ===  МЕТОД ФІЛЬТРАЦІЇ ===
   void _applyFiltersAndSort() {
     List<City> result = List.from(allCities);
 
@@ -117,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 3. Фільтр за Метриками (Ціна, Безпека, Інтернет)
     result = result.where((city) {
-      int convertedPrice = AppState.convertPrice(city.averagePrice.toInt());
+      double convertedPrice = AppState.convertPrice(city.averagePrice.toDouble());
 
       // Ціна мін
       if (_minPriceController.text.isNotEmpty) {
@@ -154,10 +153,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'Rating: Low to High':
         result.sort((a, b) => a.rating.compareTo(b.rating));
         break;
-      case 'Safety: High to Low': // НОВЕ
+      case 'Safety: High to Low': 
         result.sort((a, b) => b.safetyIndex.compareTo(a.safetyIndex));
         break;
-      case 'Internet: Fast to Slow': // НОВЕ
+      case 'Internet: Fast to Slow':
         result.sort((a, b) => b.internetSpeed.compareTo(a.internetSpeed));
         break;
       default:
@@ -193,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: StatefulBuilder(
           builder: (context, setStateDialog) {
             return Container(
-              constraints: const BoxConstraints(maxWidth: 500), // Адаптивність для ПК
+              constraints: const BoxConstraints(maxWidth: 500), 
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -205,16 +204,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
   decoration: BoxDecoration(
-    color: bgColor, // Твій колір фонy (F7F3E8)
+    color: bgColor,
     borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: const Color(0xFFDCD5C6), width: 1), // Легкий контур
+    border: Border.all(color: const Color(0xFFDCD5C6), width: 1),
   ),
   child: DropdownButtonHideUnderline(
     child: DropdownButton<String>(
       isExpanded: true,
       value: _selectedCountry,
-      // Кастомізація самого вікна списку:
-      dropdownColor: const Color(0xFFFDFCF9), // Світліший відтінок для контрасту
+      dropdownColor: const Color(0xFFFDFCF9),
       borderRadius: BorderRadius.circular(20),
       elevation: 8,
       icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF485759)),
@@ -358,8 +356,8 @@ class _HomeScreenState extends State<HomeScreen> {
       'Price: High to Low',
       'Rating: High to Low',
       'Rating: Low to High',
-      'Safety: High to Low',   // ДОДАНО
-      'Internet: Fast to Slow' // ДОДАНО
+      'Safety: High to Low',
+      'Internet: Fast to Slow'
     ];
 
     showDialog(
@@ -529,19 +527,18 @@ class _HomeScreenState extends State<HomeScreen> {
 child: Align(
   alignment: Alignment.bottomRight,
   child: Padding(
-    // Трохи підправив відступи, щоб текст не тулився до краю
     padding: EdgeInsets.only(
       right: isMobile ? 20 : 60, 
-      bottom: isMobile ? 15 : 60, // Збільшив нижній відступ для десктопа
+      bottom: isMobile ? 15 : 60, 
     ),
     child: Text(
       'Find your perfect place to live.', 
       style: TextStyle(
         fontFamily: 'SFPro', 
-        fontWeight: FontWeight.w900, // Зробив шрифт жирнішим (Black), так краще для заголовків
-        fontSize: isMobile ? 28 : 54, // Зменшив: було 32/80 -> стало 28/54
-        color: const Color(0xFFF5F5F5).withOpacity(0.8), // Більш чистий колір з м'якою прозорістю
-        letterSpacing: -1.2, // Додав від'ємний інтервал для сучасного вигляду
+        fontWeight: FontWeight.w900, 
+        fontSize: isMobile ? 28 : 54, 
+        color: const Color(0xFFF5F5F5).withOpacity(0.8), 
+        letterSpacing: -1.2, 
       ),
     ),
   ),
@@ -582,7 +579,7 @@ child: Align(
             ),
           ),
 
-          // 3. Заголовок "For you", кнопки та лінія
+          // 3. Заголовок, кнопки та лінія
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -632,7 +629,7 @@ child: Align(
             ),
           ),
           
-          // 4. САМ СПИСОК МІСТ
+          // 4.  СПИСОК МІСТ
           _isLoading
               ? const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator(color: Color(0xFF485759))))
               : paginatedCities.isEmpty
@@ -805,7 +802,6 @@ child: Align(
   }
 }
 
-// === АНІМОВАНА КНОПКА З ХОВЕРОМ ===
 class AnimatedHoverButton extends StatefulWidget {
   final String text;
   final IconData icon;

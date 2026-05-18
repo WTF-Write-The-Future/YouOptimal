@@ -12,7 +12,7 @@ class AppState {
   // === ДАНІ (Кешовані міста, Улюблене та Відвідане) ===
   static List<City> cachedCities = []; 
   static final favorites = ValueNotifier<List<City>>([]);
-  static final visitedCities = ValueNotifier<List<City>>([]); // <--- НОВИЙ СПИСОК
+  static final visitedCities = ValueNotifier<List<City>>([]);
 
   // === ДАНІ (Лічильник відгуків для бейджика) ===
   static final reviewCount = ValueNotifier<int>(0); 
@@ -104,22 +104,18 @@ class AppState {
 
     try {
       if (isExist) {
-        // 1. Видаляємо з бази
         await supabase
             .from('visited_cities') 
             .delete()
             .match({'city_id': city.id, 'user_id': user.id});
         
-        // 2. Оновлюємо UI
         currentVisited.removeWhere((c) => c.id == city.id);
       } else {
-        // 1. Додаємо в базу
         await supabase.from('visited_cities').insert({
           'city_id': city.id,
           'user_id': user.id,
         });
         
-        // 2. Оновлюємо UI
         currentVisited.add(city);
       }
       visitedCities.value = currentVisited;
@@ -183,7 +179,7 @@ class AppState {
   }
 
   // ==========================================
-  // ДОПОМІЖНІ МЕТОДИ (Helpers & Formats)
+  // ДОПОМІЖНІ МЕТОДИ
   // ==========================================
 
   static void _showAuthSnackBar(BuildContext context) {
@@ -216,13 +212,14 @@ class AppState {
     }
   }
 
-  static int convertPrice(int usdPrice) {
-    switch (currency.value) {
-      case 'EUR': return (usdPrice * 0.92).round();
-      case 'UAH': return (usdPrice * 42.0).round();
-      default: return usdPrice; 
-    }
+  static double convertPrice(double price) {
+  if (currency.value == 'UAH') {
+    return price * 42.0; // або який у вас там курс
+  } else if (currency.value == 'EUR') {
+    return price * 0.92;
   }
+  return price; // Для USD
+}
 
   static String getFormattedTemperature(double tempC) {
     if (tempUnit.value == 'F') {
@@ -284,7 +281,7 @@ class AppState {
 
   static void clearUserData() {
     favorites.value = [];
-    visitedCities.value = []; // <--- ТЕЖ ОЧИЩАЄТЬСЯ
+    visitedCities.value = [];
     reviewCount.value = 0;
   }
 }

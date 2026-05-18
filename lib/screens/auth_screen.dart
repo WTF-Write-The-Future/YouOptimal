@@ -6,10 +6,10 @@ import '../screens/settings_screen.dart';
 import '../screens/about_us_screen.dart';
 import '../screens/home_screen.dart';
 import '../state/app_state.dart';
-import '../utils/custom_snackbar.dart'; // Твоя красива вспливашка!
+import '../utils/custom_snackbar.dart';
 
 class AuthScreen extends StatefulWidget {
-  final bool isLoginMode; // ДОДАНО: Параметр, щоб знати, що відкривати
+  final bool isLoginMode; 
 
   const AuthScreen({super.key, this.isLoginMode = true});
 
@@ -18,7 +18,7 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  late bool isLogin; // ДОДАНО: тепер це late, бо беремо з widget
+  late bool isLogin; 
   bool _isLoading = false;
 
   final TextEditingController _emailController = TextEditingController();
@@ -32,7 +32,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
-    isLogin = widget.isLoginMode; // Встановлюємо стартовий режим
+    isLogin = widget.isLoginMode; 
     _user = supabase.auth.currentUser;
     
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) {
@@ -81,7 +81,7 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
     
-    // Блокуємо небажані домени (опціонально)
+    // Блокуємо небажані домени
     if (email.endsWith('.ru') || email.endsWith('.by')) {
       CustomSnackBar.show(context, message: 'Москаляку на гіляку', isError: true);
       return;
@@ -93,7 +93,6 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    // Далі йде твій старий код, нічого не змінюємо
     setState(() {
       _isLoading = true;
     });
@@ -115,7 +114,7 @@ class _AuthScreenState extends State<AuthScreen> {
           CustomSnackBar.show(context, message: 'Successfully logged in!');
         }
       } else {
-        // === ДОДАНО: ЛОГІКА РЕЄСТРАЦІЇ ===
+        // === ЛОГІКА РЕЄСТРАЦІЇ ===
         await supabase.auth.signUp(
           email: email,
           password: password,
@@ -124,13 +123,12 @@ class _AuthScreenState extends State<AuthScreen> {
         if (mounted) {
           CustomSnackBar.show(context, message: 'Registration successful! You can now sign in.');
           setState(() {
-            isLogin = true; // Перемикаємо на логін після реєстрації
-            _passwordController.clear(); // Очищаємо пароль для безпеки
+            isLogin = true; 
+            _passwordController.clear(); 
           });
         }
       }
     } on AuthException catch (error) {
-      // Supabase сам поверне красиві помилки: "User already registered", "Password should be at least 6 characters" і тд.
       if (mounted) CustomSnackBar.show(context, message: error.message, isError: true);
     } catch (error) {
       if (mounted) CustomSnackBar.show(context, message: 'Something went wrong. Please try again.', isError: true);

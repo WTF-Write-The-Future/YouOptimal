@@ -17,7 +17,7 @@ Future<void> main() async {
   final url = dotenv.env['SUPABASE_URL'] ?? '';
 final anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 
-print("Debug: URL is '$url'"); // Подивимось, чи там не пусто
+print("Debug: URL is '$url'"); 
 print("Debug: Key length is ${anonKey.length}");
 
   if (url.isEmpty || anonKey.isEmpty) {
@@ -39,14 +39,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'YouOptimal',
-      debugShowCheckedModeBanner: false, // Прибираємо червону стрічку "DEBUG"
+      debugShowCheckedModeBanner: false, 
       theme: ThemeData(
         primaryColor: const Color(0xFF485759),
-        scaffoldBackgroundColor: const Color(0xFFF7F3E8), // Ваш фірмовий фон
-        fontFamily: 'SFPro', // Основний шрифт із макетів
+        scaffoldBackgroundColor: const Color(0xFFF7F3E8),
+        fontFamily: 'SFPro',
         useMaterial3: true,
       ),
-      home: const HomeScreen(), // Запускаємо головний екран
+      home: const HomeScreen(), 
     );
   }
 }

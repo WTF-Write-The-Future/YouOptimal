@@ -4,7 +4,7 @@ import '../state/app_state.dart';
 import '../models/city.dart';
 import '../widgets/custom_header.dart';
 import '../widgets/city_card.dart';
-import '../widgets/city_card_mobile.dart'; // Імпортуємо мобільну картку
+import '../widgets/city_card_mobile.dart'; 
 
 class VisitedCitiesScreen extends StatefulWidget {
   const VisitedCitiesScreen({super.key});
@@ -34,16 +34,16 @@ class _VisitedCitiesScreenState extends State<VisitedCitiesScreen> {
 
     return Scaffold(
       backgroundColor: bgScreen,
-      appBar: const MainAppHeader(showFavourite: true), // Тут показуємо сердечко, бо ми не на екрані Favorites
+      appBar: const MainAppHeader(showFavourite: true), 
       body: ValueListenableBuilder<List<City>>(
-        valueListenable: AppState.visitedCities, // Слухаємо список відвіданих міст
+        valueListenable: AppState.visitedCities, 
         builder: (context, visitedList, child) {
           
           if (visitedList.isEmpty) {
             return _buildEmptyState();
           }
 
-          // === МОБІЛЬНА ВЕРСІЯ: Чистий вертикальний список ===
+          // === МОБІЛЬНА ВЕРСІЯ ===
           if (isMobile) {
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -75,7 +75,7 @@ class _VisitedCitiesScreenState extends State<VisitedCitiesScreen> {
             );
           }
 
-          // === ПК ВЕРСІЯ: Горизонтальна пагінація ===
+          // === ПК ВЕРСІЯ ===
           int columns = 3;
           int totalPages = (visitedList.length / columns).ceil();
 

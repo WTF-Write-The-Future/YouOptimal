@@ -2,21 +2,20 @@ name: Daily City Metrics Update
 
 on:
   schedule:
-    # Запуск кожного дня о 00:00 та 12:00 за UTC
     - cron: '0 0,12 * * *'
-  # Дозволяє запустити скрипт вручну кнопкою на GitHub
   workflow_dispatch: 
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   update-metrics:
     runs-on: ubuntu-latest
 
     steps:
-      # ВИПРАВЛЕНО: оновлено до стабільної v4 версії
       - name: Checkout repository code
         uses: actions/checkout@v4
 
-      # ВИПРАВЛЕНО: оновлено до стабільної v5 версії для Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

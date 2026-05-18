@@ -4,7 +4,7 @@ import '../state/app_state.dart';
 import '../models/city.dart';
 import '../widgets/custom_header.dart';
 import '../widgets/city_card.dart';
-import '../widgets/city_card_mobile.dart'; // Імпортуємо мобільну картку
+import '../widgets/city_card_mobile.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -43,7 +43,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             return _buildEmptyState();
           }
 
-          // === МОБІЛЬНА ВЕРСІЯ: Вертикальний скрол як на головній ===
+          // === МОБІЛЬНА ВЕРСІЯ ===
           if (isMobile) {
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -69,7 +69,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             );
           }
 
-          // === ПК ВЕРСІЯ: Пагінація у бежевому боксі ===
+          // === ПК ВЕРСІЯ===
           int columns = 3;
           int totalPages = (favList.length / columns).ceil();
 

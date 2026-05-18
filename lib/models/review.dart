@@ -1,4 +1,3 @@
-// lib/models/review.dart
 class Review {
   final String authorName;
   final String text;
@@ -7,7 +6,6 @@ class Review {
   final int cultureRating;
   final DateTime createdAt;
   
-  // НОВІ ПОЛЯ: Назва та фото міста
   final String? cityName;
   final String? cityImage;
 
@@ -26,7 +24,6 @@ class Review {
   double get averageRating => (safetyRating + architectureRating + cultureRating) / 3;
 
   factory Review.fromJson(Map<String, dynamic> json) {
-    // Якщо ми підтягнули місто через JOIN, воно буде вкладене в 'city'
     final cityData = json['city'];
 
     return Review(
@@ -38,7 +35,6 @@ class Review {
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at']) 
           : DateTime.now(),
-      // Дістаємо дані міста (перевіряємо обидва варіанти назви фото, щоб точно працювало)
       cityName: cityData != null ? cityData['name'] : null,
       cityImage: cityData != null ? (cityData['photo_url'] ?? cityData['image']) : null,
     );

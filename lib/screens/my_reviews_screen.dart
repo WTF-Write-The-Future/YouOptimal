@@ -303,13 +303,12 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))],
       ),
       child: Row(
-        // === ВИПРАВЛЕНО ОСЬ ТУТ: Вирівнювання по центру по вертикалі ===
         crossAxisAlignment: CrossAxisAlignment.center, 
         children: [
-          // 1. ФОТО МІСТА (Збільшено до 100)
+          // 1. ФОТО МІСТА 
           Container(
-            width: 100, // Було 80
-            height: 100, // Було 80
+            width: 100, 
+            height: 100,
             decoration: BoxDecoration(
               color: bgScreen,
               shape: BoxShape.circle,

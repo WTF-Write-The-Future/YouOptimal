@@ -8,7 +8,7 @@ class CityService {
   static List<City>? _cachedCities;
   static DateTime? _lastFetchTime;
   
-  // Час життя кешу (наприклад, 10 хвилин)
+  // Час життя кешу 
   static const _cacheDuration = Duration(minutes: 10); 
 
   /// [forceRefresh] дозволяє примусово оновити дані, ігноруючи кеш

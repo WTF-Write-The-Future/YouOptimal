@@ -27,9 +27,9 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
   List<Review> _allReviews = [];
   bool _isLoadingReviews = true;
   
-  // Пагінація (використовується для ПК)
+  // Пагінація
   int _currentPage = 1;
-  final int _reviewsPerPage = 2; // По 2 відгуки для балансу
+  final int _reviewsPerPage = 2; // По 2 відгуки
 
   @override
   void initState() {
@@ -75,7 +75,6 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
     return Scaffold(
       backgroundColor: bgScreen,
       appBar: const MainAppHeader(showFavourite: false),
-      // ЖОРСТКЕ РОЗДІЛЕННЯ ЛОГІКИ: Мобілка - нове, ПК - старе
       body: isMobile ? _buildPremiumMobileLayout() : _buildDesktopLayout(context),
     );
   }
@@ -99,12 +98,9 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
             ),
             child: Column(
               children: [
-                // ЗМІНЕНО: Вирівнювання по центру (center), щоб текст і фото виглядали симетрично
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // КАРТИНКА (Ідеальний розмір 140x140)
-                   // КАРТИНКА (Ідеальний розмір 140x140)
                     Hero(
                       tag: 'hero-city-image-${widget.city.id}',
                       child: Material(
@@ -159,7 +155,7 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
                             children: [
                               Text(AppState.getCurrencySymbol(), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textDark.withOpacity(0.5))),
                               Text(
-                                AppState.convertPrice(widget.city.averagePrice.toInt()).toString(),
+                                AppState.convertPrice(widget.city.averagePrice.toDouble()).toString(),
                                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: textDark, height: 1.0)
                               ),
                             ],
@@ -172,7 +168,7 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
                 ),
                 const SizedBox(height: 32),
                 
-                // МЕТРИКИ (ВСІ ДАНІ З БАЗИ)
+                // МЕТРИКИ
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -183,23 +179,35 @@ if (widget.city.tempMin != null && widget.city.tempMax != null)
     Icons.thermostat, 
     '${AppState.getFormattedTemperature(widget.city.tempMin!)} / ${AppState.getFormattedTemperature(widget.city.tempMax!)}'
   ),
-                    if (widget.city.airQualityIndex != null) _buildMobileMetricChip(Icons.air, 'Air: ${widget.city.airQualityIndex!.toInt()}'),
-                    if (widget.city.atmosphericPressure != null) _buildMobileMetricChip(Icons.compress, '${widget.city.atmosphericPressure!.toInt()} hPa'),
-                    if (widget.city.rent1Room != null) _buildMobileMetricChip(Icons.apartment, '1-bed: ${AppState.getCurrencySymbol()}${widget.city.rent1Room!.toInt()}'),
-                    if (widget.city.rent2Room != null) _buildMobileMetricChip(Icons.grid_view_rounded, '2-bed: ${AppState.getCurrencySymbol()}${widget.city.rent2Room!.toInt()}'),
-                    if (widget.city.rent3Room != null) _buildMobileMetricChip(Icons.home_work_outlined, '3-bed: ${AppState.getCurrencySymbol()}${widget.city.rent3Room!.toInt()}'),
-                    if (widget.city.rentHouse != null) _buildMobileMetricChip(Icons.home_outlined, 'House: ${AppState.getCurrencySymbol()}${widget.city.rentHouse!.toInt()}'),
-                    if (widget.city.taxiPrice != null) _buildMobileMetricChip(Icons.local_taxi, 'Taxi: ${AppState.getCurrencySymbol()}${widget.city.taxiPrice}'),
-                    if (widget.city.publicTransportPrice != null) _buildMobileMetricChip(Icons.directions_bus, 'Bus: ${AppState.getCurrencySymbol()}${widget.city.publicTransportPrice}'),
-                    if (widget.city.internetSpeed != null) _buildMobileMetricChip(Icons.wifi, '${widget.city.internetSpeed!.toInt()} Mbps'),
-                    if (widget.city.safetyIndex != null) _buildMobileMetricChip(Icons.security, 'Safety: ${widget.city.safetyIndex!.toInt()}/100'),
-                    _buildMobileMetricChip(Icons.public, widget.city.country),
+                    if (widget.city.airQualityIndex != null) 
+  _buildMobileMetricChip(Icons.air, 'Air: ${widget.city.airQualityIndex!.toInt()}'),
+if (widget.city.atmosphericPressure != null) 
+  _buildMobileMetricChip(Icons.compress, '${widget.city.atmosphericPressure!.toInt()} hPa'),
+
+if (widget.city.rent1Room != null) 
+  _buildMobileMetricChip(Icons.apartment, '1-bed: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rent1Room!).toStringAsFixed(0)}'),
+if (widget.city.rent2Room != null) 
+  _buildMobileMetricChip(Icons.grid_view_rounded, '2-bed: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rent2Room!).toStringAsFixed(0)}'),
+if (widget.city.rent3Room != null) 
+  _buildMobileMetricChip(Icons.home_work_outlined, '3-bed: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rent3Room!).toStringAsFixed(0)}'),
+if (widget.city.rentHouse != null) 
+  _buildMobileMetricChip(Icons.home_outlined, 'House: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rentHouse!).toStringAsFixed(0)}'),
+if (widget.city.taxiPrice != null) 
+  _buildMobileMetricChip(Icons.local_taxi, 'Taxi: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.taxiPrice!).toStringAsFixed(0)}'),
+if (widget.city.publicTransportPrice != null) 
+  _buildMobileMetricChip(Icons.directions_bus, 'Bus: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.publicTransportPrice!).toStringAsFixed(1)}'),
+
+if (widget.city.internetSpeed != null) 
+  _buildMobileMetricChip(Icons.wifi, '${widget.city.internetSpeed!.toInt()} Mbps'),
+if (widget.city.safetyIndex != null) 
+  _buildMobileMetricChip(Icons.security, 'Safety: ${widget.city.safetyIndex!.toInt()}/100'),
+
+_buildMobileMetricChip(Icons.public, widget.city.country),
                   ],
                 ),
                 const SizedBox(height: 24),
                 
                 // ABOUT БЛОК
-// ШУКАЙ ЦЕЙ БЛОК:
 _ExpandableAboutSection(
   cityName: widget.city.name,
   description: widget.city.full_description ?? widget.city.description, 
@@ -322,7 +330,7 @@ _ExpandableAboutSection(
     );
   }
 
-  // === НОВА КНОПКА VISITED ===
+  // ===  КНОПКА VISITED ===
   Widget _buildMobileVisitedButton() {
     return ValueListenableBuilder<List<City>>(
       valueListenable: AppState.visitedCities,
@@ -344,7 +352,7 @@ _ExpandableAboutSection(
     );
   }
 
-  // === ІСНУЮЧА КНОПКА LIKE ===
+  // ===  КНОПКА LIKE ===
   Widget _buildMobileLikeButton() {
     return ValueListenableBuilder(
       valueListenable: AppState.favorites,
@@ -362,10 +370,7 @@ _ExpandableAboutSection(
     );
   }
 
-  // ================================================================
-  // ============== СТАРА ІДЕАЛЬНА ПК ВЕРСІЯ ========================
-  // ================================================================
-  // ЖОДЕН РЯДОК НИЖЧЕ НЕ ЗМІНЕНИЙ
+  // ============== ПК ВЕРСІЯ ========================
   
   Widget _buildDesktopLayout(BuildContext context) {
     return SingleChildScrollView(
@@ -711,7 +716,7 @@ Widget _buildTitleAndPrice() {
       ValueListenableBuilder<String>(
         valueListenable: AppState.currency,
         builder: (context, currentCurrency, child) {
-          String price = AppState.convertPrice(widget.city.averagePrice.toInt()).toString();
+String price = AppState.convertPrice(widget.city.averagePrice).toStringAsFixed(0);
           return Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -749,18 +754,13 @@ Widget _buildTitleAndPrice() {
           builder: (context, _, __) {
             String tempText = 'Temp: N/A';
 
-// Перевіряємо, чи існують обидва значення
 if (widget.city.tempMin != null && widget.city.tempMax != null) {
-  // Форматуємо мінімальну температуру (наприклад, "14°C")
   String minTemp = AppState.getFormattedTemperature(widget.city.tempMin!);
   
-  // Форматуємо максимальну температуру (наприклад, "24°C")
   String maxTemp = AppState.getFormattedTemperature(widget.city.tempMax!);
   
-  // З'єднуємо їх через слеш
   tempText = '$minTemp / $maxTemp';
 }
-// Використовуй Icons.thermostat_rounded, щоб було як на мобайлі
 return _buildMetricChip(Icons.thermostat_rounded, tempText);
           }
         ),
@@ -768,20 +768,19 @@ return _buildMetricChip(Icons.thermostat_rounded, tempText);
         _buildMetricChip(Icons.wifi, widget.city.internetSpeed != null ? '${widget.city.internetSpeed} Mbps' : 'Net: N/A'),
         _buildMetricChip(Icons.security, widget.city.safetyIndex != null ? 'Safety: ${widget.city.safetyIndex}/10' : 'Safety: N/A'),
         _buildMetricChip(Icons.compress, widget.city.atmosphericPressure != null ? '${widget.city.atmosphericPressure} hPa' : 'Press: N/A'),
-        _buildMetricChip(Icons.bed_outlined, widget.city.rent1Room != null ? '1-bed: \$${widget.city.rent1Room}' : '1-bed: N/A'),
-        _buildMetricChip(Icons.bed, widget.city.rent2Room != null ? '2-bed: \$${widget.city.rent2Room}' : '2-bed: N/A'),
-        _buildMetricChip(Icons.bedroom_parent_outlined, widget.city.rent3Room != null ? '3-bed: \$${widget.city.rent3Room}' : '3-bed: N/A'),
-        _buildMetricChip(Icons.house_outlined, widget.city.rentHouse != null ? 'House: \$${widget.city.rentHouse}' : 'House: N/A'),
-        _buildMetricChip(Icons.local_taxi_outlined, widget.city.taxiPrice != null ? 'Taxi: \$${widget.city.taxiPrice}' : 'Taxi: N/A'),
-        _buildMetricChip(
-      Icons.directions_bus_rounded, 
-      widget.city.publicTransportPrice != null ? 'Bus: ${AppState.getCurrencySymbol()}${widget.city.publicTransportPrice}' : 'Bus: N/A'
-    ),
+        
+        _buildMetricChip(Icons.bed_outlined, widget.city.rent1Room != null ? '1-bed: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rent1Room!).toStringAsFixed(0)}' : '1-bed: N/A'),
+        _buildMetricChip(Icons.bed, widget.city.rent2Room != null ? '2-bed: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rent2Room!).toStringAsFixed(0)}' : '2-bed: N/A'),
+        _buildMetricChip(Icons.bedroom_parent_outlined, widget.city.rent3Room != null ? '3-bed: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rent3Room!).toStringAsFixed(0)}' : '3-bed: N/A'),
+        _buildMetricChip(Icons.house_outlined, widget.city.rentHouse != null ? 'House: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rentHouse!).toStringAsFixed(0)}' : 'House: N/A'),
+        _buildMetricChip(Icons.local_taxi_outlined, widget.city.taxiPrice != null ? 'Taxi: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.taxiPrice!).toStringAsFixed(0)}' : 'Taxi: N/A'),
+        
+        _buildMetricChip(Icons.directions_bus_rounded, widget.city.publicTransportPrice != null ? 'Bus: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.publicTransportPrice!).toStringAsFixed(1)}' : 'Bus: N/A'),
     
     // КРАЇНА
     _buildMetricChip(
       Icons.public_rounded, 
-      widget.city.country // Просто назва країни
+      widget.city.country
     ),
       ],
     );
@@ -811,7 +810,7 @@ return _buildMetricChip(Icons.thermostat_rounded, tempText);
   }
 }
 
-// === СПІЛЬНИЙ ВІДЖЕТ: ІНТЕРАКТИВНА КАРТКА ВІДГУКУ ===
+// ===  КАРТКА ВІДГУКУ ===
 class _ReviewCard extends StatefulWidget {
   final Review review;
   final Color bgCard;

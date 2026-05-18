@@ -80,7 +80,6 @@ void main() {
       await tester.tap(viewButton);
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      // ВИПРАВЛЕНО: Шукаємо текст, що МІСТИТЬ "ABOUT", щоб покрити і "ABOUT CITY", і "ABOUT LVIV"
       expect(find.textContaining('ABOUT'), findsWidgets);
     });
 
@@ -88,7 +87,6 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
       
-      // ВИПРАВЛЕННЯ: Шукаємо Львів
       await tester.enterText(find.byType(TextField).first, 'Lviv');
       await tester.pumpAndSettle(const Duration(seconds: 1));
 
@@ -109,7 +107,6 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
       
-      // Шукаємо Львів
       await tester.enterText(find.byType(TextField).first, 'Lviv');
       await tester.pumpAndSettle(const Duration(seconds: 1));
 
@@ -120,13 +117,11 @@ void main() {
       await tester.tap(viewButton);
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      // ВИПРАВЛЕНО: Гнучкий пошук іконки. Вона може бути вже заповненою з попередніх тестів
       Finder favoriteIcon = find.byIcon(Icons.favorite_border);
       if (favoriteIcon.evaluate().isEmpty) {
         favoriteIcon = find.byIcon(Icons.favorite);
       }
 
-      // Переконуємось, що хоч якась іконка серця знайдена
       expect(favoriteIcon, findsWidgets);
 
       await tester.ensureVisible(favoriteIcon.first);
@@ -135,7 +130,6 @@ void main() {
       await tester.tap(favoriteIcon.first);
       await tester.pumpAndSettle();
 
-      // Після кліку стан має просто успішно змінитись без крашу додатка
     });
 
     testWidgets('8. Перевірка екрану Settings та зміни валюти', (tester) async {

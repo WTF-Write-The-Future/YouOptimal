@@ -9,8 +9,8 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F3E8), 
-      appBar: const MainAppHeader(), // Хедер сам додасть стрілку назад, якщо ми прийшли з іншого екрану
-      body: Center( // Прибрав Stack, залишив просто Center
+      appBar: const MainAppHeader(), 
+      body: Center( 
         child: SingleChildScrollView(
           child: Container(
             width: 500,

@@ -14,12 +14,10 @@ class ReviewScreen extends StatefulWidget {
 }
 
 class _ReviewScreenState extends State<ReviewScreen> {
-  // Окремі змінні для кожної категорії
   int _safetyStars = 0;
   int _architectureStars = 0;
   int _cultureStars = 0;
   
-  // Контролери для тексту
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _reviewController = TextEditingController();
 
@@ -43,16 +41,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return Scaffold(
       backgroundColor: _bgScreen,
       appBar: const MainAppHeader(showFavourite: true),
-      // НОВЕ: LayoutBuilder дозволяє дізнатися точну висоту доступного екрана
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: ConstrainedBox(
-              // Змушуємо контент бути мінімум такої ж висоти, як екран
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0), // Трохи зменшили вертикальний відступ
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0), 
                   child: Container(
                     constraints: const BoxConstraints(maxWidth: 900), 
                     decoration: BoxDecoration(
@@ -68,7 +64,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     ),
                     child: isMobile 
                       ? Column(
-                          mainAxisSize: MainAxisSize.min, // Щоб колонка не розтягувалась нескінченно
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             _buildLeftCitySection(isMobile: true),
                             _buildRightReviewSection(isMobile: true),
@@ -204,7 +200,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   CustomSnackBar.show(
                     context, 
                     message: 'You must be logged in to leave a review!',
-                    isError: true, // Ставимо true, щоб вона була червоною (як помилка/попередження)
+                    isError: true,
                   );
                   return;
                 }
@@ -262,7 +258,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  // Дизайн для текстових полів
   InputDecoration _inputStyle(String hint) {
     return InputDecoration(
       hintText: hint,
