@@ -766,7 +766,7 @@ return _buildMetricChip(Icons.thermostat_rounded, tempText);
         ),
         _buildMetricChip(Icons.air, widget.city.airQualityIndex != null ? 'AQI: ${widget.city.airQualityIndex}' : 'AQI: N/A'),
         _buildMetricChip(Icons.wifi, widget.city.internetSpeed != null ? '${widget.city.internetSpeed} Mbps' : 'Net: N/A'),
-        _buildMetricChip(Icons.security, widget.city.safetyIndex != null ? 'Safety: ${widget.city.safetyIndex}/10' : 'Safety: N/A'),
+        _buildMetricChip(Icons.security, widget.city.safetyIndex != null ? 'Safety: ${widget.city.safetyIndex}/100' : 'Safety: N/A'),
         _buildMetricChip(Icons.compress, widget.city.atmosphericPressure != null ? '${widget.city.atmosphericPressure} hPa' : 'Press: N/A'),
         
         _buildMetricChip(Icons.bed_outlined, widget.city.rent1Room != null ? '1-bed: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rent1Room!).toStringAsFixed(0)}' : '1-bed: N/A'),
