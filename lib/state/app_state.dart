@@ -4,23 +4,74 @@ import '../models/city.dart';
 import '../screens/auth_screen.dart';
 
 class AppState {
-  // === НАЛАШТУВАННЯ ДОДАТКУ (Preferences) ===
+  // ==========================================
+  // НАЛАШТУВАННЯ ДОДАТКУ (Preferences)
+  // ==========================================
   static final language = ValueNotifier<String>('auto');
   static final currency = ValueNotifier<String>('USD');
   static final tempUnit = ValueNotifier<String>('C');
 
-  // === ДАНІ (Кешовані міста, Улюблене та Відвідане) ===
+  // Змінні для зберігання актуальних курсів
+  static double _usdToUah = 42.0; 
+  static double _usdToEur = 0.92;
+
+  // ==========================================
+  // ДАНІ (Кешовані міста, Улюблене та Відвідане)
+  // ==========================================
   static List<City> cachedCities = []; 
   static final favorites = ValueNotifier<List<City>>([]);
   static final visitedCities = ValueNotifier<List<City>>([]);
 
-  // === ДАНІ (Лічильник відгуків для бейджика) ===
+  // Лічильник відгуків для бейджика
   static final reviewCount = ValueNotifier<int>(0); 
+
+  // ==========================================
+  // ЛОГІКА ВАЛЮТ ТА ТЕМПЕРАТУРИ
+  // ==========================================
+
+  // Стягує свіжі курси з Supabase при запуску
+  static Future<void> fetchExchangeRates() async {
+    try {
+      final data = await Supabase.instance.client.from('exchange_rates').select();
+      for (var row in data) {
+        if (row['currency_code'] == 'UAH') _usdToUah = (row['rate'] as num).toDouble();
+        if (row['currency_code'] == 'EUR') _usdToEur = (row['rate'] as num).toDouble();
+      }
+      debugPrint('Свіжі курси завантажено: UAH=$_usdToUah, EUR=$_usdToEur');
+    } catch (e) {
+      debugPrint('Помилка завантаження курсів: $e');
+    }
+  }
+
+  static String getCurrencySymbol() {
+    switch (currency.value) {
+      case 'EUR': return '€';
+      case 'UAH': return '₴';
+      default: return '\$';
+    }
+  }
+
+  // Конвертер: тепер множить на динамічні змінні
+  static double convertPrice(double price) {
+    if (currency.value == 'UAH') {
+      return price * _usdToUah;
+    } else if (currency.value == 'EUR') {
+      return price * _usdToEur;
+    }
+    return price; // Для USD
+  }
+
+  static String getFormattedTemperature(double tempC) {
+    if (tempUnit.value == 'F') {
+      final tempF = tempC * 9 / 5 + 32;
+      return '${tempF.toStringAsFixed(1)}°F';
+    }
+    return '${tempC.toStringAsFixed(1)}°C';
+  }
 
   // ==========================================
   // ЛОГІКА "УЛЮБЛЕНОГО" (FAVORITES)
   // ==========================================
-  
   static Future<void> toggleFavorite(BuildContext context, City city) async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
@@ -88,7 +139,6 @@ class AppState {
   // ==========================================
   // ЛОГІКА "ВІДВІДАНИХ МІСТ" (VISITED CITIES)
   // ==========================================
-  
   static Future<void> toggleVisited(BuildContext context, City city) async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
@@ -155,7 +205,6 @@ class AppState {
   // ==========================================
   // ЛОГІКА ЛІЧИЛЬНИКА ВІДГУКІВ (REVIEWS)
   // ==========================================
-
   static Future<void> syncReviewCount() async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
@@ -179,60 +228,8 @@ class AppState {
   }
 
   // ==========================================
-  // ДОПОМІЖНІ МЕТОДИ
-  // ==========================================
-
-  static void _showAuthSnackBar(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: const Color(0xFFC9BA9B), 
-        content: const Row(
-          children: [
-            Icon(Icons.info_outline, color: Color(0xFF4A5556)),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Please sign in to save data!', // Трохи змінив текст, щоб підходив і для Visited
-                style: TextStyle(fontFamily: 'SFPro', color: Color(0xFF4A5556), fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static String getCurrencySymbol() {
-    switch (currency.value) {
-      case 'EUR': return '€';
-      case 'UAH': return '₴';
-      default: return '\$';
-    }
-  }
-
-  static double convertPrice(double price) {
-  if (currency.value == 'UAH') {
-    return price * 42.0; // або який у вас там курс
-  } else if (currency.value == 'EUR') {
-    return price * 0.92;
-  }
-  return price; // Для USD
-}
-
-  static String getFormattedTemperature(double tempC) {
-    if (tempUnit.value == 'F') {
-      final tempF = tempC * 9 / 5 + 32;
-      return '${tempF.toStringAsFixed(1)}°F';
-    }
-    return '${tempC.toStringAsFixed(1)}°C';
-  }
-
-  // ==========================================
   // РОБОТА З НАЛАШТУВАННЯМИ В БАЗІ ДАНИХ
   // ==========================================
-
   static Future<void> savePreference(String column, String value) async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
@@ -278,10 +275,34 @@ class AppState {
   // ==========================================
   // ОЧИЩЕННЯ ДАНИХ (При Logout)
   // ==========================================
-
   static void clearUserData() {
     favorites.value = [];
     visitedCities.value = [];
     reviewCount.value = 0;
+  }
+
+  // ==========================================
+  // ДОПОМІЖНІ МЕТОДИ
+  // ==========================================
+  static void _showAuthSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFFC9BA9B), 
+        content: const Row(
+          children: [
+            Icon(Icons.info_outline, color: Color(0xFF4A5556)),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Please sign in to save data!',
+                style: TextStyle(fontFamily: 'SFPro', color: Color(0xFF4A5556), fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

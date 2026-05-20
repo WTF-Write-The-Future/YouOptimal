@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'screens/home_screen.dart';
+import 'state/app_state.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,19 +16,23 @@ Future<void> main() async {
   }
 
   final url = dotenv.env['SUPABASE_URL'] ?? '';
-final anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  final anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 
-print("Debug: URL is '$url'"); 
-print("Debug: Key length is ${anonKey.length}");
+  print("Debug: URL is '$url'"); 
+  print("Debug: Key length is ${anonKey.length}");
 
   if (url.isEmpty || anonKey.isEmpty) {
     print("🚨 КРИТИЧНО: URL або AnonKey порожні! Перевір .env та pubspec.yaml");
   }
 
+  // 1. Ініціалізуємо підключення до бази
   await Supabase.initialize(
     url: url,
     anonKey: anonKey,
   );
+
+  // Завантажуємо свіжі курси валют з БД перед запуском UI
+  await AppState.fetchExchangeRates();
 
   runApp(const MyApp());
 }

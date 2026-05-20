@@ -25,9 +25,15 @@ jobs:
         run: |
           pip install requests supabase python-dotenv
 
-      - name: Run update script
+      - name: Run Weather Metrics Update
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
         run: python scripts/update_metrics.py
+
+      - name: Run Exchange Rates Update (NBU API)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/update_rates.py
