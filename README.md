@@ -92,7 +92,7 @@ graph TD
 ## 👥 The "WTF" (Write The Future) Team
 * **Oleksandr Tseniuk** — Frontend Developer
 * **Ostap Tutyn** — Team Lead & Backend Developer
-* **Bozhena** — UI/UX Designer
+* **Bozhena Schur** — UI/UX Designer
 * **Ostap Bakhurskyi** — Full-Stack Developer
 * **Vitaliy Malevych** — Backend Developer
 * **Oksana Datskiv** — QA Engineer
