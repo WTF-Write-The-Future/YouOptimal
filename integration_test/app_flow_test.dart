@@ -9,15 +9,15 @@ void main() {
   group('Integration Tests: Повний цикл YouOptimal', () {
     
     testWidgets('1. Завантаження головного екрану', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 5));
 
       expect(find.byType(TextField), findsWidgets);
     });
 
     testWidgets('2. Успішний пошук міста', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
       await Future.delayed(const Duration(seconds: 1));
 
@@ -33,7 +33,7 @@ void main() {
     });
 
     testWidgets('3. Пошук неіснуючого міста (Негативний сценарій)', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       final searchField = find.byType(TextField).first;
@@ -44,7 +44,7 @@ void main() {
     });
 
     testWidgets('4. Тестування фільтрів та сортування', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       final filterButton = find.text('Filter');
@@ -61,7 +61,7 @@ void main() {
     });
 
   testWidgets('5. Перехід на екран деталей міста (View Button)', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
       await Future.delayed(const Duration(seconds: 2));
 
@@ -84,7 +84,7 @@ void main() {
     });
 
     testWidgets('6. Перевірка динамічного Full Description', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
       
       await tester.enterText(find.byType(TextField).first, 'Lviv');
@@ -104,7 +104,7 @@ void main() {
     });
 
     testWidgets('7. Взаємодія з обраним (Favorites) на екрані деталей', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
       
       await tester.enterText(find.byType(TextField).first, 'Lviv');
@@ -133,7 +133,7 @@ void main() {
     });
 
     testWidgets('8. Перевірка екрану Settings та зміни валюти', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       final settingsButton = find.text('Settings');
@@ -155,7 +155,7 @@ void main() {
     });
 
     testWidgets('9. Перевірка зміни одиниць температури', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField).first, 'Lviv');
@@ -180,7 +180,7 @@ void main() {
     });
 
     testWidgets('10. Перевірка екрану About Us', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       final aboutButton = find.text('About us');
@@ -194,7 +194,7 @@ void main() {
     });
 
     testWidgets('11. Екран авторизації: Невалідні дані (Negative Test)', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       final signInButton = find.text('Sign in');
@@ -220,7 +220,7 @@ void main() {
     });
 
     testWidgets('12. Екран авторизації: Перемикання на Register', (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       final signInButton = find.text('Sign in');
