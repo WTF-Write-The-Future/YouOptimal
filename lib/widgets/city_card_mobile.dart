@@ -127,7 +127,7 @@ class CityCardMobile extends StatelessWidget {
                       
                       const Spacer(),
 
-                      // НАЗВА ТА ЦІНА
+// НАЗВА ТА ЦІНА
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -143,7 +143,7 @@ class CityCardMobile extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${AppState.getCurrencySymbol()}${AppState.convertPrice(city.averagePrice.toDouble())}/mo',
+                            '${AppState.getCurrencySymbol()}${AppState.convertPrice(city.averagePrice.toDouble()).toStringAsFixed(0)}/mo',
                             style: const TextStyle(
                               fontFamily: 'SFPro', 
                               color: Colors.white, 

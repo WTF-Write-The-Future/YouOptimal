@@ -155,7 +155,7 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
                             children: [
                               Text(AppState.getCurrencySymbol(), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textDark.withOpacity(0.5))),
                               Text(
-                                AppState.convertPrice(widget.city.averagePrice.toDouble()).toString(),
+                               AppState.convertPrice(widget.city.averagePrice.toDouble()).toStringAsFixed(0),
                                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: textDark, height: 1.0)
                               ),
                             ],
@@ -195,7 +195,7 @@ if (widget.city.rentHouse != null)
 if (widget.city.taxiPrice != null) 
   _buildMobileMetricChip(Icons.local_taxi, 'Taxi: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.taxiPrice!).toStringAsFixed(0)}'),
 if (widget.city.publicTransportPrice != null) 
-  _buildMobileMetricChip(Icons.directions_bus, 'Bus: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.publicTransportPrice!).toStringAsFixed(1)}'),
+  _buildMobileMetricChip(Icons.directions_bus, 'Bus: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.publicTransportPrice!).toStringAsFixed(0)}'),
 
 if (widget.city.internetSpeed != null) 
   _buildMobileMetricChip(Icons.wifi, '${widget.city.internetSpeed!.toInt()} Mbps'),
@@ -775,7 +775,7 @@ return _buildMetricChip(Icons.thermostat_rounded, tempText);
         _buildMetricChip(Icons.house_outlined, widget.city.rentHouse != null ? 'House: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.rentHouse!).toStringAsFixed(0)}' : 'House: N/A'),
         _buildMetricChip(Icons.local_taxi_outlined, widget.city.taxiPrice != null ? 'Taxi: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.taxiPrice!).toStringAsFixed(0)}' : 'Taxi: N/A'),
         
-        _buildMetricChip(Icons.directions_bus_rounded, widget.city.publicTransportPrice != null ? 'Bus: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.publicTransportPrice!).toStringAsFixed(1)}' : 'Bus: N/A'),
+        _buildMetricChip(Icons.directions_bus_rounded, widget.city.publicTransportPrice != null ? 'Bus: ${AppState.getCurrencySymbol()}${AppState.convertPrice(widget.city.publicTransportPrice!).toStringAsFixed(0)}' : 'Bus: N/A'),
     
     // КРАЇНА
     _buildMetricChip(

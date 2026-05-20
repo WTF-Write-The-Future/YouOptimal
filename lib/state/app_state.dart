@@ -29,7 +29,6 @@ class AppState {
   // ЛОГІКА ВАЛЮТ ТА ТЕМПЕРАТУРИ
   // ==========================================
 
-  // Стягує свіжі курси з Supabase при запуску
   static Future<void> fetchExchangeRates() async {
     try {
       final data = await Supabase.instance.client.from('exchange_rates').select();
@@ -51,7 +50,7 @@ class AppState {
     }
   }
 
-  // Конвертер: тепер множить на динамічні змінні
+  // Конвертер
   static double convertPrice(double price) {
     if (currency.value == 'UAH') {
       return price * _usdToUah;
