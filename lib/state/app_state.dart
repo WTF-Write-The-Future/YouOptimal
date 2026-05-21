@@ -81,29 +81,35 @@ class AppState {
       return; 
     }
 
+    // 1. ОПТИМІСТИЧНЕ ОНОВЛЕННЯ UI (Миттєво)
     final List<City> currentFavs = List<City>.from(favorites.value);
     final bool isExist = currentFavs.any((c) => c.id == city.id);
 
+    if (isExist) {
+      currentFavs.removeWhere((c) => c.id == city.id);
+    } else {
+      currentFavs.add(city);
+    }
+    favorites.value = currentFavs; // UI перемальовується тут!
+
+    // 2. ФОНОВИЙ ЗАПИТ ДО БАЗИ
     try {
       if (isExist) {
         await supabase
             .from('favourite') 
             .delete()
             .match({'city_id': city.id, 'user_id': user.id});
-        
-        currentFavs.removeWhere((c) => c.id == city.id);
       } else {
         await supabase.from('favourite').insert({
           'city_id': city.id,
           'user_id': user.id,
           'added_at': DateTime.now().toIso8601String(),
         });
-        
-        currentFavs.add(city);
       }
-      favorites.value = currentFavs;
     } catch (e) {
       debugPrint('Error toggling favorite: $e');
+      // 3. ВІДКАТ У РАЗІ ПОМИЛКИ
+      await syncFavorites(); 
     }
   }
 
@@ -148,28 +154,34 @@ class AppState {
       return; 
     }
 
+    // 1. ОПТИМІСТИЧНЕ ОНОВЛЕННЯ UI (Миттєво)
     final List<City> currentVisited = List<City>.from(visitedCities.value);
     final bool isExist = currentVisited.any((c) => c.id == city.id);
 
+    if (isExist) {
+      currentVisited.removeWhere((c) => c.id == city.id);
+    } else {
+      currentVisited.add(city);
+    }
+    visitedCities.value = currentVisited; // UI перемальовується тут!
+
+    // 2. ФОНОВИЙ ЗАПИТ ДО БАЗИ
     try {
       if (isExist) {
         await supabase
             .from('visited_cities') 
             .delete()
             .match({'city_id': city.id, 'user_id': user.id});
-        
-        currentVisited.removeWhere((c) => c.id == city.id);
       } else {
         await supabase.from('visited_cities').insert({
           'city_id': city.id,
           'user_id': user.id,
         });
-        
-        currentVisited.add(city);
       }
-      visitedCities.value = currentVisited;
     } catch (e) {
       debugPrint('Error toggling visited city: $e');
+      // 3. ВІДКАТ У РАЗІ ПОМИЛКИ
+      await syncVisitedCities(); 
     }
   }
 
